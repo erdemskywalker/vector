@@ -18,6 +18,11 @@ class VectorApp {
     this.canvas = document.getElementById('game-canvas');
     this.viewport = document.getElementById('game-viewport');
 
+    // Transition Overlay Elements
+    this.transOverlay = document.getElementById('sector-transition-overlay');
+    this.transTitle = document.getElementById('sector-trans-title');
+    this.transPar = document.getElementById('sector-trans-par');
+
     // Systems
     this.progress = new ProgressManager();
     this.audio = new AudioManager(this.progress);
@@ -131,6 +136,46 @@ class VectorApp {
     } catch (err) {
       console.error('Failed to load level:', err);
       alert(`Could not load level ${levelId}`);
+    }
+  }
+
+  async transitionToLevel(nextLvl) {
+    try {
+      const levelData = await this.levelManager.getLevel(nextLvl);
+
+      // 1. Show transition animation overlay
+      if (this.transOverlay) {
+        if (this.transTitle) this.transTitle.textContent = `SECTOR ${String(nextLvl).padStart(2, '0')}`;
+        if (this.transPar) this.transPar.textContent = `PAR TARGET: ${levelData.par} MOVES`;
+        this.transOverlay.classList.add('active');
+      }
+
+      this.audio.playWarp();
+
+      // 2. Prepare next level in engine & canvas
+      this.engine.loadLevel(levelData);
+      this.renderer.calculateLayout(levelData.width, levelData.height);
+      this.gameplayUI.updateHUD(this.engine.state);
+
+      if (this.renderer.viewWidth && this.renderer.viewHeight) {
+        this.renderer.effects.addShockwave(
+          this.renderer.viewWidth / 2,
+          this.renderer.viewHeight / 2,
+          '#73D7FF',
+          160
+        );
+      }
+
+      // 3. Keep overlay visible for 550ms for smooth pacing, then fade into gameplay
+      setTimeout(() => {
+        if (this.transOverlay) {
+          this.transOverlay.classList.remove('active');
+        }
+      }, 550);
+
+    } catch (err) {
+      console.error('Failed to transition to level:', err);
+      this.router.navigate('levels');
     }
   }
 

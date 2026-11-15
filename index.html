@@ -24,6 +24,16 @@
 
   <div id="app-container">
 
+    <!-- SECTOR TRANSITION ANIMATION OVERLAY -->
+    <div id="sector-transition-overlay" class="sector-transition-overlay">
+      <div class="sector-transition-content">
+        <span class="sector-trans-tag">HYPER-SLIDE VECTOR TRANSITION</span>
+        <h2 id="sector-trans-title" class="sector-trans-title">SECTOR 02</h2>
+        <div class="sector-trans-line"></div>
+        <span id="sector-trans-par" class="sector-trans-sub">PAR TARGET: 4 MOVES</span>
+      </div>
+    </div>
+
     <!-- SCREEN 1: MAIN MENU -->
     <section id="screen-menu" class="screen active">
       <div class="menu-container">
@@ -190,10 +200,30 @@
           </div>
         </div>
 
+        <!-- Automatic Countdown Pacing Bar -->
+        <div class="auto-advance-container">
+          <div class="auto-advance-track">
+            <div id="auto-advance-fill" class="auto-advance-fill"></div>
+          </div>
+          <span id="auto-advance-text" class="auto-advance-label">Auto-advancing in 3s...</span>
+        </div>
+
         <div class="result-actions">
+          <button id="btn-result-menu" class="btn-icon" aria-label="Level Select" title="Level Select">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </button>
           <button id="btn-result-retry" class="btn-secondary">RETRY</button>
-          <!-- Continues to Level Select to view progression & pace out -->
-          <button id="btn-result-next" class="btn-primary">CONTINUE</button>
+          <button id="btn-result-next" class="btn-primary">
+            <span id="txt-result-next">NEXT (3s)</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

@@ -51,3 +51,120 @@
 .float-anim {
   animation: floatGentle 3s ease-in-out infinite;
 }
+
+/* =========================================
+   Sector Transition Animation Overlay
+   ========================================= */
+.sector-transition-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(17, 21, 30, 0.96) 0%, rgba(11, 13, 18, 0.99) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 250;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.sector-transition-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.sector-transition-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transform: scale(0.85);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sector-transition-overlay.active .sector-transition-content {
+  transform: scale(1);
+}
+
+.sector-trans-tag {
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  color: var(--accent-primary);
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  animation: pulseWarpTag 1.2s infinite;
+}
+
+@keyframes pulseWarpTag {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; text-shadow: 0 0 12px rgba(115, 215, 255, 0.9); }
+}
+
+.sector-trans-title {
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  color: #F1F5F9;
+  text-shadow: 0 0 35px rgba(115, 215, 255, 0.6);
+}
+
+.sector-trans-line {
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #73D7FF, #86EFAC, transparent);
+  margin: 14px 0;
+  box-shadow: 0 0 10px rgba(115, 215, 255, 0.8);
+}
+
+.sector-trans-sub {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* =========================================
+   Auto-Advance Countdown Bar
+   ========================================= */
+.auto-advance-container {
+  width: 100%;
+  margin: 8px 0 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.auto-advance-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(37, 44, 58, 0.7);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.auto-advance-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-exit));
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 8px rgba(115, 215, 255, 0.5);
+  transition: width 0.1s linear;
+}
+
+.auto-advance-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
