@@ -7,6 +7,26 @@ export const DIRECTIONS = {
   RIGHT: { x: 1, y: 0, name: 'RIGHT' }
 };
 
+export function buildPortalsMap(grid, width, height) {
+  const teleports = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (grid[y][x] === TILE_TYPES.TELEPORT) {
+        teleports.push({ x, y });
+      }
+    }
+  }
+
+  const map = new Map();
+  for (let i = 0; i < teleports.length - 1; i += 2) {
+    const a = teleports[i];
+    const b = teleports[i + 1];
+    map.set(`${a.x},${a.y}`, { x: b.x, y: b.y });
+    map.set(`${b.x},${b.y}`, { x: a.x, y: a.y });
+  }
+  return map;
+}
+
 export function calculateSlide(
   grid,
   width,
@@ -16,7 +36,9 @@ export function calculateSlide(
   dir,
   totalCores = 0,
   collectedCoresSet = new Set(),
-  brokenCrackedSet = new Set()
+  brokenCrackedSet = new Set(),
+  portalsMap = null,
+  initialGatesOpen = false
 ) {
   let x = startX;
   let y = startY;
@@ -26,7 +48,11 @@ export function calculateSlide(
   let reachedExit = false;
   let hitHazard = false;
   let portalBecameActive = false;
+  let currentGatesOpen = initialGatesOpen;
+  let teleportHops = 0;
 
+  // Resolve portals map if not provided
+  const activePortals = portalsMap || buildPortalsMap(grid, width, height);
   const currentCoresCount = collectedCoresSet.size;
 
   while (true) {
@@ -46,7 +72,12 @@ export function calculateSlide(
       break;
     }
 
-    // 3. Cracked wall check
+    // 3. Laser Forcefield Gate check (Closed = Solid obstacle)
+    if (tile === TILE_TYPES.GATE && !currentGatesOpen) {
+      break;
+    }
+
+    // 4. Cracked wall check
     if (tile === TILE_TYPES.CRACKED) {
       const isAlreadyBroken = brokenCrackedSet.has(coord) || newlyBrokenCracked.includes(coord);
       if (!isAlreadyBroken) {
@@ -61,7 +92,7 @@ export function calculateSlide(
     x = nextX;
     y = nextY;
 
-    // 4. Hazard contact check
+    // 5. Hazard contact check
     if (tile === TILE_TYPES.HAZARD) {
       hitHazard = true;
       path.push({
@@ -70,12 +101,14 @@ export function calculateSlide(
         coord,
         hitHazard: true,
         coreCollected: false,
-        reachedExit: false
+        reachedExit: false,
+        isSwitch: false,
+        gatesOpen: currentGatesOpen
       });
       break;
     }
 
-    // 5. Energy Core collection check
+    // 6. Energy Core collection check
     let coreCollected = false;
     if (tile === TILE_TYPES.CORE) {
       const isAlreadyCollected = collectedCoresSet.has(coord) || newlyCollectedCores.includes(coord);
@@ -88,7 +121,14 @@ export function calculateSlide(
       }
     }
 
-    // 6. Exit Portal check
+    // 7. Pressure Switch check (Toggles laser forcefield gates)
+    let switchToggled = false;
+    if (tile === TILE_TYPES.SWITCH) {
+      currentGatesOpen = !currentGatesOpen;
+      switchToggled = true;
+    }
+
+    // 8. Exit Portal check
     let reached = false;
     if (tile === TILE_TYPES.EXIT) {
       const isPortalActive = (currentCoresCount + newlyCollectedCores.length >= totalCores);
@@ -96,7 +136,13 @@ export function calculateSlide(
         reached = true;
         reachedExit = true;
       }
-      // If portal not active yet, cube slides straight through!
+    }
+
+    // 9. Quantum Warp Portal check (Preserves momentum!)
+    let warpDestination = null;
+    if (tile === TILE_TYPES.TELEPORT && activePortals.has(coord) && teleportHops < 8) {
+      warpDestination = activePortals.get(coord);
+      teleportHops++;
     }
 
     path.push({
@@ -105,11 +151,31 @@ export function calculateSlide(
       coord,
       coreCollected,
       hitHazard: false,
-      reachedExit: reached
+      reachedExit: reached,
+      isSwitch: switchToggled,
+      gatesOpen: currentGatesOpen,
+      isPortalEnter: warpDestination !== null
     });
 
     if (reached) {
-      break; // Exit caught the player; level completed!
+      break; // Exit reached!
+    }
+
+    // Teleportation execution: Jump to paired portal and continue in same direction
+    if (warpDestination) {
+      x = warpDestination.x;
+      y = warpDestination.y;
+      path.push({
+        x,
+        y,
+        coord: `${x},${y}`,
+        coreCollected: false,
+        hitHazard: false,
+        reachedExit: false,
+        isSwitch: false,
+        gatesOpen: currentGatesOpen,
+        isPortalExit: true
+      });
     }
   }
 
@@ -122,6 +188,7 @@ export function calculateSlide(
     hitHazard,
     portalBecameActive,
     newlyCollectedCores,
-    newlyBrokenCracked
+    newlyBrokenCracked,
+    finalGatesOpen: currentGatesOpen
   };
 }

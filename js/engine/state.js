@@ -1,3 +1,5 @@
+import { buildPortalsMap } from './movement.js';
+
 export class GameState {
   constructor(levelData) {
     this.init(levelData);
@@ -21,6 +23,12 @@ export class GameState {
     // Visual animated position
     this.visualX = this.playerX;
     this.visualY = this.playerY;
+
+    // Quantum Warp Portals map
+    this.portalsMap = buildPortalsMap(this.grid, this.width, this.height);
+
+    // Laser Gates state (false = closed forcefield, true = open beam)
+    this.gatesOpen = Boolean(levelData.gatesOpen);
 
     // Count Energy Cores
     this.totalCores = 0;
@@ -81,6 +89,7 @@ export class GameState {
       playerY: this.playerY,
       collectedCores: new Set(this.collectedCores),
       brokenCrackedWalls: new Set(this.brokenCrackedWalls),
+      gatesOpen: this.gatesOpen,
       moveCount: this.moveCount,
       isDead: this.isDead,
       deathReason: this.deathReason
@@ -99,6 +108,7 @@ export class GameState {
     this.visualY = snapshot.playerY;
     this.collectedCores = snapshot.collectedCores;
     this.brokenCrackedWalls = snapshot.brokenCrackedWalls;
+    this.gatesOpen = snapshot.gatesOpen;
     this.moveCount = snapshot.moveCount;
     this.isDead = snapshot.isDead;
     this.deathReason = snapshot.deathReason;
@@ -116,6 +126,7 @@ export class GameState {
     this.visualY = this.start.y;
     this.collectedCores.clear();
     this.brokenCrackedWalls.clear();
+    this.gatesOpen = Boolean(this.level.gatesOpen);
     this.moveCount = 0;
     this.isCompleted = false;
     this.isDead = false;

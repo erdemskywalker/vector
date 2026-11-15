@@ -283,7 +283,7 @@
    ========================================= */
 .world-selector-tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 20px;
   background: rgba(13, 17, 26, 0.75);
   backdrop-filter: blur(8px);
@@ -291,19 +291,26 @@
   padding: 5px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-hairline);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.world-selector-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .world-tab-btn {
-  flex: 1;
-  padding: 10px;
+  flex: 1 0 auto;
+  padding: 8px 10px;
   text-align: center;
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   border-radius: var(--radius-xs);
   color: var(--text-secondary);
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .world-tab-btn.active {

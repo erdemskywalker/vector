@@ -6,6 +6,8 @@ export class LevelSelectUI {
     this.btnBack = document.getElementById('btn-levels-back');
     this.tabOrigin = document.getElementById('tab-world-origin');
     this.tabKeys = document.getElementById('tab-world-keys');
+    this.tabQuantum = document.getElementById('tab-world-quantum');
+    this.tabNexus = document.getElementById('tab-world-nexus');
     this.gridContainer = document.getElementById('level-grid-container');
     this.starTotalEl = document.getElementById('levels-star-total');
 
@@ -21,32 +23,60 @@ export class LevelSelectUI {
       this.app.router.navigate('menu');
     });
 
-    this.tabOrigin.addEventListener('click', () => {
-      this.app.audio.playClick();
-      this.setWorld('origin');
-    });
+    if (this.tabOrigin) {
+      this.tabOrigin.addEventListener('click', () => {
+        this.app.audio.playClick();
+        this.setWorld('origin');
+      });
+    }
 
-    this.tabKeys.addEventListener('click', () => {
-      this.app.audio.playClick();
-      this.setWorld('keys');
-    });
+    if (this.tabKeys) {
+      this.tabKeys.addEventListener('click', () => {
+        this.app.audio.playClick();
+        this.setWorld('keys');
+      });
+    }
+
+    if (this.tabQuantum) {
+      this.tabQuantum.addEventListener('click', () => {
+        this.app.audio.playClick();
+        this.setWorld('quantum');
+      });
+    }
+
+    if (this.tabNexus) {
+      this.tabNexus.addEventListener('click', () => {
+        this.app.audio.playClick();
+        this.setWorld('nexus');
+      });
+    }
   }
 
   highlightUnlock(levelId) {
     this.unlockedLevelId = levelId;
-    const targetWorld = levelId > 30 ? 'keys' : 'origin';
+    const targetWorld = levelId > 90 ? 'nexus' : levelId > 60 ? 'quantum' : levelId > 30 ? 'keys' : 'origin';
     this.setWorld(targetWorld);
   }
 
   setWorld(worldName) {
     this.activeWorld = worldName;
-    if (worldName === 'origin') {
-      this.tabOrigin.classList.add('active');
-      this.tabKeys.classList.remove('active');
-    } else {
-      this.tabKeys.classList.add('active');
-      this.tabOrigin.classList.remove('active');
-    }
+    const tabs = [
+      { name: 'origin', el: this.tabOrigin },
+      { name: 'keys', el: this.tabKeys },
+      { name: 'quantum', el: this.tabQuantum },
+      { name: 'nexus', el: this.tabNexus }
+    ];
+
+    tabs.forEach(t => {
+      if (t.el) {
+        if (t.name === worldName) {
+          t.el.classList.add('active');
+        } else {
+          t.el.classList.remove('active');
+        }
+      }
+    });
+
     this.renderGrid();
   }
 

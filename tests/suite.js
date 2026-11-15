@@ -237,6 +237,76 @@ test('Progression: Stars, unlocking, and persistence', () => {
   assert.strictEqual(pm.getTotalStars(), 3);
 });
 
+// 7. Quantum Warp Portal Momentum
+test('Quantum Warp: Teleport preserves slide direction and momentum', () => {
+  const level = {
+    id: 106,
+    world: 'quantum',
+    width: 9,
+    height: 5,
+    par: 1,
+    grid: [
+      "#########",
+      "#S.T.T.E#", // T1 at (3,1), T2 at (5,1), E at (7,1)
+      "#.......#",
+      "#.......#",
+      "#########"
+    ]
+  };
+
+  const engine = new GameEngine();
+  engine.loadLevel(level);
+
+  // Swipe RIGHT: enters T1 at (3,1), warps to T2 at (5,1), continues RIGHT directly into Exit at (7,1)
+  engine.move('RIGHT');
+  engine.finishSlide();
+
+  assert.strictEqual(engine.state.isCompleted, true);
+  assert.strictEqual(engine.state.playerX, 7);
+  assert.strictEqual(engine.state.playerY, 1);
+});
+
+// 8. Logic Pressure Switch & Laser Gate Toggle
+test('Logic Protocol: Switch toggles laser forcefield gate between solid and open', () => {
+  const level = {
+    id: 107,
+    world: 'nexus',
+    width: 7,
+    height: 7,
+    par: 3,
+    grid: [
+      "#######",
+      "#S...P#", // Switch at (5,1)
+      "#.....#",
+      "#..G.E#", // Closed gate at (3,3), Exit at (5,3)
+      "#.....#",
+      "#.....#",
+      "#######"
+    ]
+  };
+
+  const engine = new GameEngine();
+  engine.loadLevel(level);
+
+  assert.strictEqual(engine.state.gatesOpen, false);
+
+  // Attempting to move across closed gate:
+  // If cube was at (1,3) sliding RIGHT, G would block it at (2,3).
+  // But moving to Switch at (5,1):
+  engine.move('RIGHT');
+  engine.finishSlide();
+
+  // Stepped on P at (5,1) -> gates are now open!
+  assert.strictEqual(engine.state.gatesOpen, true);
+  assert.strictEqual(engine.state.playerX, 5);
+  assert.strictEqual(engine.state.playerY, 1);
+
+  // Move DOWN to (5,3) which is E
+  engine.move('DOWN');
+  engine.finishSlide();
+  assert.strictEqual(engine.state.isCompleted, true);
+});
+
 console.log(`\n========================================`);
 console.log(`All ${testsPassed} automated test cases PASSED!`);
 console.log(`========================================`);

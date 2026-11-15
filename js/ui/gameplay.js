@@ -122,7 +122,10 @@ export class GameplayUI {
     if (!state) return;
 
     const level = state.level;
-    const worldName = level.world === 'origin' ? 'WORLD 01' : 'WORLD 02';
+    let worldName = 'WORLD 01';
+    if (level.world === 'keys') worldName = 'WORLD 02';
+    else if (level.world === 'quantum') worldName = 'WORLD 03';
+    else if (level.world === 'nexus') worldName = 'WORLD 04';
     const levelNumber = `LEVEL ${String(level.id).padStart(2, '0')}`;
 
     this.hudWorld.textContent = worldName;

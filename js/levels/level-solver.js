@@ -1,13 +1,13 @@
-import { DIRECTIONS, calculateSlide } from '../engine/movement.js';
+import { DIRECTIONS, calculateSlide, buildPortalsMap } from '../engine/movement.js';
 
 export class LevelSolver {
   /**
-   * Solves a level using BFS to find the shortest swipe sequence with Cores, Hazards, and Cracked Walls.
+   * Solves a level using BFS to find the shortest swipe sequence with Cores, Hazards, Cracked Walls, Portals, and Switches.
    * @param {Object} parsedLevel - Level object from LevelParser
    * @param {number} maxStates - Guard against unbounded searches
    * @returns {{ solved: boolean, moves: number, path: string[], error?: string }}
    */
-  static solve(parsedLevel, maxStates = 120000) {
+  static solve(parsedLevel, maxStates = 150000) {
     const { width, height, grid, start } = parsedLevel;
 
     // Index all cores and cracked walls for bitmask encoding
@@ -22,18 +22,21 @@ export class LevelSolver {
     }
 
     const totalCores = coreCoords.length;
+    const portalsMap = buildPortalsMap(grid, width, height);
 
     const queue = [];
     const visited = new Set();
 
     const initialCollected = parsedLevel.collectedCores ? new Set(parsedLevel.collectedCores) : new Set();
     const initialBroken = parsedLevel.brokenCracked ? new Set(parsedLevel.brokenCracked) : new Set();
+    const initialGatesOpen = Boolean(parsedLevel.gatesOpen);
 
     const initialState = {
       x: start.x,
       y: start.y,
       collectedCores: initialCollected,
       brokenCracked: initialBroken,
+      gatesOpen: initialGatesOpen,
       path: []
     };
 
@@ -47,7 +50,7 @@ export class LevelSolver {
       if (initialBroken.has(c)) startCrackedMask |= (1 << idx);
     });
 
-    visited.add(`${start.x},${start.y}|${startCoreMask}|${startCrackedMask}`);
+    visited.add(`${start.x},${start.y}|${startCoreMask}|${startCrackedMask}|${initialGatesOpen ? 1 : 0}`);
     queue.push(initialState);
 
     let statesChecked = 0;
@@ -77,7 +80,9 @@ export class LevelSolver {
           dir,
           totalCores,
           current.collectedCores,
-          current.brokenCracked
+          current.brokenCracked,
+          portalsMap,
+          current.gatesOpen
         );
 
         if (!result.moved || result.hitHazard) {
@@ -100,6 +105,8 @@ export class LevelSolver {
         const nextBroken = new Set(current.brokenCracked);
         result.newlyBrokenCracked.forEach(c => nextBroken.add(c));
 
+        const nextGatesOpen = result.finalGatesOpen;
+
         let cMask = 0;
         coreCoords.forEach((c, idx) => {
           if (nextCollected.has(c)) cMask |= (1 << idx);
@@ -110,7 +117,7 @@ export class LevelSolver {
           if (nextBroken.has(c)) crkMask |= (1 << idx);
         });
 
-        const stateHash = `${result.endX},${result.endY}|${cMask}|${crkMask}`;
+        const stateHash = `${result.endX},${result.endY}|${cMask}|${crkMask}|${nextGatesOpen ? 1 : 0}`;
 
         if (!visited.has(stateHash)) {
           visited.add(stateHash);
@@ -119,6 +126,7 @@ export class LevelSolver {
             y: result.endY,
             collectedCores: nextCollected,
             brokenCracked: nextBroken,
+            gatesOpen: nextGatesOpen,
             path: newPath
           });
         }

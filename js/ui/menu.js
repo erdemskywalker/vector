@@ -37,11 +37,11 @@ export class MenuUI {
     const current = this.app.progress.getCurrentLevel();
 
     this.statStars.textContent = totalStars;
-    this.statCompleted.textContent = `${completed} / 60`;
+    this.statCompleted.textContent = `${completed} / 120`;
 
-    if (current > 1 && current <= 60) {
+    if (current > 1 && current <= 120) {
       this.txtContinue.textContent = `CONTINUE // LEVEL ${String(current).padStart(2, '0')}`;
-    } else if (current > 60) {
+    } else if (current > 120) {
       this.txtContinue.textContent = 'RETRANSCEND ALL';
     } else {
       this.txtContinue.textContent = 'INITIATE // LEVEL 01';

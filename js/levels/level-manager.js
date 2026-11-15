@@ -22,7 +22,7 @@ export class LevelManager {
       return this.cache.get(id);
     }
 
-    const world = id <= 30 ? 'origin' : 'keys';
+    const world = id <= 30 ? 'origin' : id <= 60 ? 'keys' : id <= 90 ? 'quantum' : 'nexus';
     const filename = `level-${String(id).padStart(3, '0')}.json`;
     const url = `levels/${world}/${filename}`;
 
@@ -50,8 +50,18 @@ export class LevelManager {
 
   getWorldList(worldName = 'origin') {
     const list = [];
-    const minId = worldName === 'origin' ? 1 : 31;
-    const maxId = worldName === 'origin' ? 30 : 60;
+    let minId = 1, maxId = 30;
+
+    if (worldName === 'keys') {
+      minId = 31;
+      maxId = 60;
+    } else if (worldName === 'quantum') {
+      minId = 61;
+      maxId = 90;
+    } else if (worldName === 'nexus') {
+      minId = 91;
+      maxId = 120;
+    }
 
     for (let id = minId; id <= maxId; id++) {
       const cached = this.cache.get(id);
@@ -75,6 +85,6 @@ export class LevelManager {
   }
 
   getTotalLevels() {
-    return 60;
+    return 120;
   }
 }

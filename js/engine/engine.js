@@ -16,6 +16,8 @@ export class GameEngine {
     this.onWallCrack = null;
     this.onWallHit = null;
     this.onPortalActivate = null;
+    this.onPortalWarp = null;
+    this.onSwitchToggle = null;
     this.onPlayerDeath = null;
     this.onLevelComplete = null;
     this.onStateChange = null;
@@ -46,7 +48,9 @@ export class GameEngine {
       dir,
       this.state.totalCores,
       this.state.collectedCores,
-      this.state.brokenCrackedWalls
+      this.state.brokenCrackedWalls,
+      this.state.portalsMap,
+      this.state.gatesOpen
     );
 
     if (!result.moved) {
@@ -84,11 +88,24 @@ export class GameEngine {
       return;
     }
 
-    const progressDelta = dt * this.slideSpeed;
-    this.currentSegmentProgress += progressDelta;
-
     const p0 = this.animationQueue[this.animatingPathIndex];
     const p1 = this.animationQueue[this.animatingPathIndex + 1];
+
+    // If next segment is a portal jump, teleport instantly without linear interpolation across maze
+    if (p1.isPortalExit) {
+      this.currentSegmentProgress = 0;
+      this.animatingPathIndex++;
+      this.state.visualX = p1.x;
+      this.state.visualY = p1.y;
+      if (this.onPortalWarp) this.onPortalWarp(p0.x, p0.y, p1.x, p1.y);
+      if (this.animatingPathIndex >= this.animationQueue.length - 1) {
+        this.finishSlide();
+      }
+      return;
+    }
+
+    const progressDelta = dt * this.slideSpeed;
+    this.currentSegmentProgress += progressDelta;
 
     if (this.currentSegmentProgress >= 1.0) {
       this.currentSegmentProgress = 0;
@@ -96,6 +113,12 @@ export class GameEngine {
 
       this.state.visualX = p1.x;
       this.state.visualY = p1.y;
+
+      // Switch toggle mid-slide
+      if (p1.isSwitch) {
+        this.state.gatesOpen = p1.gatesOpen;
+        if (this.onSwitchToggle) this.onSwitchToggle(p1.x, p1.y, p1.gatesOpen);
+      }
 
       // Core collection mid-slide
       if (p1.coreCollected) {
@@ -148,6 +171,7 @@ export class GameEngine {
     this.state.playerY = res.endY;
     this.state.visualX = res.endX;
     this.state.visualY = res.endY;
+    this.state.gatesOpen = res.finalGatesOpen;
 
     res.newlyCollectedCores.forEach(c => this.state.collectedCores.add(c));
 

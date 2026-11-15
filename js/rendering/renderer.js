@@ -220,6 +220,15 @@ export class CanvasRenderer {
     } else if (tile === TILE_TYPES.EXIT) {
       // Exit Portal
       this.drawExit(ctx, cellX, cellY, size, gameState.isPortalActive());
+    } else if (tile === TILE_TYPES.TELEPORT) {
+      // Quantum Warp Portal
+      this.drawPortal(ctx, cellX, cellY, size);
+    } else if (tile === TILE_TYPES.SWITCH) {
+      // Logic Pressure Switch
+      this.drawSwitch(ctx, cellX, cellY, size, gameState.gatesOpen);
+    } else if (tile === TILE_TYPES.GATE) {
+      // Laser Forcefield Gate
+      this.drawGate(ctx, cellX, cellY, size, gameState.gatesOpen);
     }
   }
 
@@ -298,6 +307,109 @@ export class CanvasRenderer {
       ctx.arc(cx, cy, 3, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.restore();
+  }
+
+  drawPortal(ctx, cellX, cellY, size) {
+    const cx = cellX + size / 2;
+    const cy = cellY + size / 2;
+    const r = size * 0.35;
+    const angle = this.pulseTime * 2.2;
+
+    ctx.save();
+    // Outer rotating ring (Cyan)
+    ctx.shadowColor = '#73D7FF';
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = '#73D7FF';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, angle, angle + Math.PI * 1.5);
+    ctx.stroke();
+
+    // Inner counter-rotating ring (Purple)
+    ctx.strokeStyle = '#A78BFA';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.65, -angle, -angle + Math.PI * 1.5);
+    ctx.stroke();
+
+    // Central Singularity Void
+    ctx.fillStyle = '#07090E';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  drawSwitch(ctx, cellX, cellY, size, isArmed) {
+    const cx = cellX + size / 2;
+    const cy = cellY + size / 2;
+    const p = size * 0.18;
+
+    ctx.save();
+    // Switch Base Pad
+    ctx.fillStyle = isArmed ? 'rgba(251, 191, 36, 0.12)' : 'rgba(100, 116, 139, 0.1)';
+    ctx.strokeStyle = isArmed ? '#FBBF24' : '#475569';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(cellX + p, cellY + p, size - p * 2, size - p * 2, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    // Core Indicator Light
+    const pulse = 1 + Math.sin(this.pulseTime * 6) * 0.15;
+    ctx.fillStyle = isArmed ? '#FBBF24' : '#38BDF8';
+    if (isArmed) {
+      ctx.shadowColor = '#FBBF24';
+      ctx.shadowBlur = 10;
+    }
+    ctx.beginPath();
+    ctx.arc(cx, cy, (size * 0.12) * pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  drawGate(ctx, cellX, cellY, size, isOpen) {
+    const p = 2;
+    ctx.save();
+
+    if (!isOpen) {
+      // Closed Laser Forcefield Barrier
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.12)';
+      ctx.strokeStyle = 'rgba(251, 113, 133, 0.8)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(cellX + p, cellY + p, size - p * 2, size - p * 2, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // Laser energy beams
+      const pulse = 0.8 + Math.sin(this.pulseTime * 8) * 0.2;
+      ctx.shadowColor = '#FB7185';
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = `rgba(251, 113, 133, ${pulse})`;
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(cellX + p + 2, cellY + size * 0.35);
+      ctx.lineTo(cellX + size - p - 2, cellY + size * 0.35);
+      ctx.moveTo(cellX + p + 2, cellY + size * 0.65);
+      ctx.lineTo(cellX + size - p - 2, cellY + size * 0.65);
+      ctx.stroke();
+    } else {
+      // Open / Deactivated Gate Guide
+      ctx.strokeStyle = 'rgba(115, 215, 255, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(cellX + size * 0.5, cellY + p);
+      ctx.lineTo(cellX + size * 0.5, cellY + size - p);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     ctx.restore();
   }
 

@@ -94,6 +94,26 @@ class VectorApp {
       this.audio.playPortalActive();
     };
 
+    this.engine.onPortalWarp = (fromX, fromY, toX, toY) => {
+      const px1 = this.renderer.originX + (fromX + 0.5) * this.renderer.cellSize;
+      const py1 = this.renderer.originY + (fromY + 0.5) * this.renderer.cellSize;
+      const px2 = this.renderer.originX + (toX + 0.5) * this.renderer.cellSize;
+      const py2 = this.renderer.originY + (toY + 0.5) * this.renderer.cellSize;
+
+      this.renderer.effects.addShockwave(px1, py1, '#73D7FF', 50);
+      this.renderer.effects.addBurst(px1, py1, '#A78BFA', 14);
+      this.renderer.effects.addShockwave(px2, py2, '#A78BFA', 60);
+      this.renderer.effects.addBurst(px2, py2, '#73D7FF', 14);
+      this.audio.playPortalWarp();
+    };
+
+    this.engine.onSwitchToggle = (x, y, gatesOpen) => {
+      const px = this.renderer.originX + (x + 0.5) * this.renderer.cellSize;
+      const py = this.renderer.originY + (y + 0.5) * this.renderer.cellSize;
+      this.renderer.effects.addShockwave(px, py, gatesOpen ? '#FBBF24' : '#FB7185', 40);
+      this.audio.playSwitch();
+    };
+
     this.engine.onPlayerDeath = (reason, x, y) => {
       const px = this.renderer.originX + (x + 0.5) * this.renderer.cellSize;
       const py = this.renderer.originY + (y + 0.5) * this.renderer.cellSize;

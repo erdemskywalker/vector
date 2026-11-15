@@ -12,7 +12,7 @@ import { LevelSolver } from '../js/levels/level-solver.js';
 function validateAll() {
   console.log('=== VECTOR 2.0 LEVEL INTEGRITY VALIDATOR ===\n');
 
-  const worlds = ['origin', 'keys'];
+  const worlds = ['origin', 'keys', 'quantum', 'nexus'];
   let totalChecked = 0;
   let totalErrors = 0;
 

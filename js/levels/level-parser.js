@@ -28,6 +28,9 @@ export class LevelParser {
     const cores = [];
     const cracked = [];
     const hazards = [];
+    const portals = [];
+    const switches = [];
+    const gates = [];
 
     const allowed = new Set(Object.values(TILE_TYPES));
 
@@ -50,6 +53,12 @@ export class LevelParser {
           cracked.push({ x, y });
         } else if (char === TILE_TYPES.HAZARD) {
           hazards.push({ x, y });
+        } else if (char === TILE_TYPES.TELEPORT) {
+          portals.push({ x, y });
+        } else if (char === TILE_TYPES.SWITCH) {
+          switches.push({ x, y });
+        } else if (char === TILE_TYPES.GATE) {
+          gates.push({ x, y });
         }
       }
     }
@@ -63,7 +72,7 @@ export class LevelParser {
 
     return {
       id: data.id,
-      world: data.world || (data.id <= 30 ? 'origin' : 'keys'),
+      world: data.world || (data.id <= 30 ? 'origin' : data.id <= 60 ? 'keys' : data.id <= 90 ? 'quantum' : 'nexus'),
       name: data.name || `Level ${data.id}`,
       width: width,
       height: height,
@@ -74,7 +83,10 @@ export class LevelParser {
       exit: exitPos,
       cores: cores,
       cracked: cracked,
-      hazards: hazards
+      hazards: hazards,
+      portals: portals,
+      switches: switches,
+      gates: gates
     };
   }
 }

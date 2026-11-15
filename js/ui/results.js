@@ -127,7 +127,7 @@ export class ResultsUI {
     const currentLvl = this.app.engine.state ? this.app.engine.state.level.id : 1;
     const nextLvl = currentLvl + 1;
 
-    if (nextLvl > 60) {
+    if (nextLvl > 120) {
       this.app.router.navigate('menu');
       return;
     }
