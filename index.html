@@ -200,15 +200,7 @@
           </div>
         </div>
 
-        <!-- Automatic Countdown Pacing Bar -->
-        <div class="auto-advance-container">
-          <div class="auto-advance-track">
-            <div id="auto-advance-fill" class="auto-advance-fill"></div>
-          </div>
-          <span id="auto-advance-text" class="auto-advance-label">Auto-advancing in 3s...</span>
-        </div>
-
-        <div class="result-actions">
+        <div class="result-actions" style="margin-top: 10px;">
           <button id="btn-result-menu" class="btn-icon" aria-label="Level Select" title="Level Select">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"></rect>
@@ -218,8 +210,9 @@
             </svg>
           </button>
           <button id="btn-result-retry" class="btn-secondary">RETRY</button>
-          <button id="btn-result-next" class="btn-primary">
-            <span id="txt-result-next">NEXT (3s)</span>
+          <button id="btn-result-next" class="btn-primary btn-chargeable" disabled>
+            <span class="btn-charge-fill" id="btn-next-charge-fill"></span>
+            <span class="btn-charge-text">NEXT</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
