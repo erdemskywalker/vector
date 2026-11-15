@@ -1,0 +1,88 @@
+export class LevelSelectUI {
+  constructor(app) {
+    this.app = app;
+
+    this.screen = document.getElementById('screen-levels');
+    this.btnBack = document.getElementById('btn-levels-back');
+    this.tabOrigin = document.getElementById('tab-world-origin');
+    this.tabKeys = document.getElementById('tab-world-keys');
+    this.gridContainer = document.getElementById('level-grid-container');
+
+    this.activeWorld = 'origin';
+
+    this.initEvents();
+  }
+
+  initEvents() {
+    this.btnBack.addEventListener('click', () => {
+      this.app.audio.playClick();
+      this.app.router.navigate('menu');
+    });
+
+    this.tabOrigin.addEventListener('click', () => {
+      this.app.audio.playClick();
+      this.setWorld('origin');
+    });
+
+    this.tabKeys.addEventListener('click', () => {
+      this.app.audio.playClick();
+      this.setWorld('keys');
+    });
+  }
+
+  setWorld(worldName) {
+    this.activeWorld = worldName;
+    if (worldName === 'origin') {
+      this.tabOrigin.classList.add('active');
+      this.tabKeys.classList.remove('active');
+    } else {
+      this.tabKeys.classList.add('active');
+      this.tabOrigin.classList.remove('active');
+    }
+    this.renderGrid();
+  }
+
+  renderGrid() {
+    this.gridContainer.innerHTML = '';
+    const levels = this.app.levelManager.getWorldList(this.activeWorld);
+    const currentLvl = this.app.progress.getCurrentLevel();
+
+    levels.forEach(lvl => {
+      const stats = this.app.progress.getLevelStats(lvl.id);
+      const isUnlocked = this.app.progress.isLevelUnlocked(lvl.id);
+      const isCurrent = lvl.id === currentLvl;
+
+      const card = document.createElement('div');
+      card.className = `level-card ${isUnlocked ? '' : 'locked'} ${stats.completed ? 'completed' : ''} ${isCurrent ? 'current' : ''}`;
+
+      if (isUnlocked) {
+        card.innerHTML = `
+          <span class="level-num">${lvl.id}</span>
+          <div class="level-stars">
+            ${stats.stars >= 1 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
+            ${stats.stars >= 2 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
+            ${stats.stars >= 3 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          this.app.audio.playClick();
+          this.app.loadAndStartLevel(lvl.id);
+        });
+      } else {
+        card.innerHTML = `
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        `;
+      }
+
+      this.gridContainer.appendChild(card);
+    });
+  }
+
+  update() {
+    this.renderGrid();
+  }
+}

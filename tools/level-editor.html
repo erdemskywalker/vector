@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VECTOR — Level Editor & Validator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0B0D12;
+      color: #F1F5F9;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    aside {
+      width: 380px;
+      background: #11151E;
+      border-right: 1px solid #252C3A;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      gap: 18px;
+      overflow-y: auto;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0B0D12;
+      position: relative;
+    }
+    h1 { font-size: 1.4rem; font-weight: 800; color: #73D7FF; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; }
+    .subtitle { font-size: 0.75rem; color: #8792A5; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+    .section-title { font-size: 0.75rem; font-weight: 700; color: #8792A5; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    label { font-size: 0.85rem; color: #F1F5F9; flex: 1; }
+    input, select, textarea {
+      background: #171C27;
+      border: 1px solid #252C3A;
+      color: #F1F5F9;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #73D7FF; }
+    .palette-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .palette-btn {
+      background: #171C27;
+      border: 1px solid #252C3A;
+      color: #F1F5F9;
+      padding: 10px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .palette-btn.active {
+      background: rgba(115, 215, 255, 0.15);
+      border-color: #73D7FF;
+      color: #73D7FF;
+    }
+    .tile-badge { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+    .btn {
+      background: #171C27;
+      border: 1px solid #252C3A;
+      color: #F1F5F9;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary { background: linear-gradient(135deg, #73D7FF, #A78BFA); color: #0B0D12; border: none; }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn:hover { border-color: #73D7FF; }
+    #editor-canvas {
+      background: #171C27;
+      border: 2px solid #252C3A;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    }
+    .status-box {
+      background: #171C27;
+      border: 1px solid #252C3A;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <aside>
+    <div>
+      <h1>VECTOR BUILDER</h1>
+      <div class="subtitle">AI & Level Design Workbench</div>
+    </div>
+
+    <div>
+      <div class="section-title">Grid Dimensions</div>
+      <div class="row">
+        <label>Width:</label>
+        <select id="sel-w">
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8" selected>8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+        <label style="margin-left: 10px;">Height:</label>
+        <select id="sel-h">
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8" selected>8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Level Metadata</div>
+      <div class="row" style="margin-bottom: 8px;">
+        <label>ID:</label>
+        <input type="number" id="inp-id" value="1" style="width: 80px;">
+        <label style="margin-left: 10px;">World:</label>
+        <select id="sel-world">
+          <option value="origin">Origin</option>
+          <option value="keys">Keys</option>
+        </select>
+      </div>
+      <div class="row" style="margin-bottom: 8px;">
+        <label>Name:</label>
+        <input type="text" id="inp-name" value="Custom Level" style="width: 180px;">
+      </div>
+      <div class="row">
+        <label>Par Moves:</label>
+        <input type="number" id="inp-par" value="4" style="width: 80px;">
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Brush Palette</div>
+      <div class="palette-grid">
+        <button class="palette-btn active" data-tile="#">
+          <span class="tile-badge" style="background: #1E2536; border: 1px solid #73D7FF;"></span>
+          Wall (#)
+        </button>
+        <button class="palette-btn" data-tile=".">
+          <span class="tile-badge" style="background: #171C27; border: 1px solid #333C4E;"></span>
+          Empty (.)
+        </button>
+        <button class="palette-btn" data-tile="S">
+          <span class="tile-badge" style="background: #73D7FF;"></span>
+          Start (S)
+        </button>
+        <button class="palette-btn" data-tile="E">
+          <span class="tile-badge" style="background: #86EFAC;"></span>
+          Exit (E)
+        </button>
+        <button class="palette-btn" data-tile="K">
+          <span class="tile-badge" style="background: #FDE047;"></span>
+          Key (K)
+        </button>
+        <button class="palette-btn" data-tile="D">
+          <span class="tile-badge" style="background: #F59E0B;"></span>
+          Door (D)
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button id="btn-solve" class="btn btn-primary">SOLVE & VERIFY (BFS)</button>
+      <div class="row">
+        <button id="btn-export" class="btn" style="flex: 1;">COPY JSON</button>
+        <button id="btn-clear" class="btn" style="flex: 1;">CLEAR</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Solver Output / Validation</div>
+      <div id="status-log" class="status-box">Ready. Draw maze and click SOLVE.</div>
+    </div>
+
+    <div>
+      <div class="section-title">Import JSON</div>
+      <textarea id="txt-import" rows="3" placeholder="Paste level JSON here..." style="width: 100%; resize: vertical;"></textarea>
+      <button id="btn-import" class="btn" style="width: 100%; margin-top: 6px;">LOAD JSON</button>
+    </div>
+  </aside>
+
+  <main>
+    <canvas id="editor-canvas" width="480" height="480"></canvas>
+  </main>
+
+  <script type="module">
+    import { LevelSolver } from '../js/levels/level-solver.js';
+    import { LevelParser } from '../js/levels/level-parser.js';
+
+    let width = 8;
+    let height = 8;
+    let grid = [];
+    let currentBrush = '#';
+    let isDrawing = false;
+
+    const canvas = document.getElementById('editor-canvas');
+    const ctx = canvas.getContext('2d');
+    const statusLog = document.getElementById('status-log');
+
+    function initGrid(w, h) {
+      width = w;
+      height = h;
+      grid = [];
+      for (let y = 0; y < height; y++) {
+        const row = [];
+        for (let x = 0; x < width; x++) {
+          if (x === 0 || x === width - 1 || y === 0 || y === height - 1) {
+            row.push('#');
+          } else {
+            row.push('.');
+          }
+        }
+        grid.push(row);
+      }
+      grid[1][1] = 'S';
+      grid[height - 2][width - 2] = 'E';
+      render();
+    }
+
+    function render() {
+      const cellSize = Math.floor(480 / Math.max(width, height));
+      canvas.width = cellSize * width;
+      canvas.height = cellSize * height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const tile = grid[y][x];
+          const px = x * cellSize;
+          const py = y * cellSize;
+
+          ctx.strokeStyle = '#252C3A';
+          ctx.strokeRect(px, py, cellSize, cellSize);
+
+          if (tile === '#') {
+            ctx.fillStyle = '#1E2536';
+            ctx.fillRect(px + 2, py + 2, cellSize - 4, cellSize - 4);
+          } else if (tile === 'S') {
+            ctx.fillStyle = '#73D7FF';
+            ctx.beginPath();
+            ctx.roundRect(px + 6, py + 6, cellSize - 12, cellSize - 12, 4);
+            ctx.fill();
+          } else if (tile === 'E') {
+            ctx.strokeStyle = '#86EFAC';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(px + cellSize/2, py + cellSize/2, cellSize * 0.3, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (tile === 'K') {
+            ctx.fillStyle = '#FDE047';
+            ctx.beginPath();
+            ctx.arc(px + cellSize/2, py + cellSize/2, cellSize * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (tile === 'D') {
+            ctx.fillStyle = '#F59E0B';
+            ctx.fillRect(px + 4, py + 4, cellSize - 8, cellSize - 8);
+          }
+        }
+      }
+    }
+
+    function paint(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const cellSize = canvas.width / width;
+      const x = Math.floor((clientX - rect.left) / cellSize);
+      const y = Math.floor((clientY - rect.top) / cellSize);
+
+      if (x < 0 || x >= width || y < 0 || y >= height) return;
+
+      // Unique tile checks
+      if (currentBrush === 'S' || currentBrush === 'E') {
+        for (let r = 0; r < height; r++) {
+          for (let c = 0; c < width; c++) {
+            if (grid[r][c] === currentBrush) grid[r][c] = '.';
+          }
+        }
+      }
+
+      grid[y][x] = currentBrush;
+      render();
+    }
+
+    canvas.addEventListener('mousedown', (e) => { isDrawing = true; paint(e.clientX, e.clientY); });
+    window.addEventListener('mousemove', (e) => { if (isDrawing) paint(e.clientX, e.clientY); });
+    window.addEventListener('mouseup', () => { isDrawing = false; });
+
+    document.querySelectorAll('.palette-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentBrush = btn.dataset.tile;
+      });
+    });
+
+    document.getElementById('sel-w').addEventListener('change', (e) => {
+      initGrid(parseInt(e.target.value), height);
+    });
+    document.getElementById('sel-h').addEventListener('change', (e) => {
+      initGrid(width, parseInt(e.target.value));
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      initGrid(width, height);
+    });
+
+    document.getElementById('btn-solve').addEventListener('click', () => {
+      const levelObj = {
+        id: parseInt(document.getElementById('inp-id').value) || 1,
+        world: document.getElementById('sel-world').value,
+        name: document.getElementById('inp-name').value,
+        width: width,
+        height: height,
+        par: parseInt(document.getElementById('inp-par').value) || 4,
+        grid: grid.map(r => r.join(''))
+      };
+
+      try {
+        const parsed = LevelParser.parse(levelObj);
+        const solution = LevelSolver.solve(parsed);
+
+        if (solution && solution.solved) {
+          statusLog.style.color = '#86EFAC';
+          statusLog.textContent = `SOLVABLE!\nOptimal Par: ${solution.moves} moves\nSequence: ${solution.path.join(' -> ')}`;
+          document.getElementById('inp-par').value = solution.moves;
+        } else {
+          statusLog.style.color = '#FB7185';
+          statusLog.textContent = `UNSOLVABLE!\n${solution.error || 'No valid path from Start to Exit.'}`;
+        }
+      } catch (err) {
+        statusLog.style.color = '#FB7185';
+        statusLog.textContent = `ERROR:\n${err.message}`;
+      }
+    });
+
+    document.getElementById('btn-export').addEventListener('click', () => {
+      const levelObj = {
+        id: parseInt(document.getElementById('inp-id').value) || 1,
+        world: document.getElementById('sel-world').value,
+        name: document.getElementById('inp-name').value,
+        width: width,
+        height: height,
+        par: parseInt(document.getElementById('inp-par').value) || 4,
+        grid: grid.map(r => r.join(''))
+      };
+
+      const jsonStr = JSON.stringify(levelObj, null, 2);
+      navigator.clipboard.writeText(jsonStr);
+      statusLog.style.color = '#73D7FF';
+      statusLog.textContent = 'JSON copied to clipboard!';
+    });
+
+    document.getElementById('btn-import').addEventListener('click', () => {
+      try {
+        const text = document.getElementById('txt-import').value;
+        const obj = JSON.parse(text);
+        const parsed = LevelParser.parse(obj);
+
+        width = parsed.width;
+        height = parsed.height;
+        grid = parsed.grid.map(row => row.split(''));
+
+        document.getElementById('sel-w').value = width;
+        document.getElementById('sel-h').value = height;
+        document.getElementById('inp-id').value = parsed.id;
+        document.getElementById('inp-name').value = parsed.name;
+        document.getElementById('inp-par').value = parsed.par;
+        document.getElementById('sel-world').value = parsed.world;
+
+        render();
+        statusLog.style.color = '#86EFAC';
+        statusLog.textContent = `Loaded level "${parsed.name}" (${width}x${height})`;
+      } catch (err) {
+        statusLog.style.color = '#FB7185';
+        statusLog.textContent = `Import failed: ${err.message}`;
+      }
+    });
+
+    initGrid(width, height);
+  </script>
+</body>
+</html>
