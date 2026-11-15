@@ -86,7 +86,7 @@ export class ResultsUI {
       }
     }, 460);
 
-    // Initial 3-second locked state
+    // Initial 2-second locked state
     this.btnNext.disabled = true;
     this.btnNext.classList.remove('ready');
 
@@ -97,20 +97,20 @@ export class ResultsUI {
 
     this.modal.classList.add('active');
 
-    // Trigger smooth 3-second charge animation
+    // Trigger smooth 2-second charge animation
     setTimeout(() => {
       if (this.btnChargeFill) {
-        this.btnChargeFill.style.transition = 'width 3s linear';
+        this.btnChargeFill.style.transition = 'width 2s linear';
         this.btnChargeFill.style.width = '100%';
       }
     }, 60);
 
-    // After exactly 3 seconds, button becomes active with ready state (NO auto-advance!)
+    // After exactly 2 seconds, button becomes active with ready state (NO auto-advance!)
     this.chargeTimeout = setTimeout(() => {
       this.btnNext.disabled = false;
       this.btnNext.classList.add('ready');
       this.app.audio.playClick();
-    }, 3060);
+    }, 2000);
   }
 
   clearCharge() {

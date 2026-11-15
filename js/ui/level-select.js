@@ -57,7 +57,7 @@ export class LevelSelectUI {
     const totalStars = this.app.progress.getTotalStars();
 
     if (this.starTotalEl) {
-      this.starTotalEl.textContent = `${totalStars} ★`;
+      this.starTotalEl.textContent = totalStars;
     }
 
     levels.forEach(lvl => {

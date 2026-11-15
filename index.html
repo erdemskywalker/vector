@@ -95,11 +95,18 @@
 
         <div class="menu-progress-summary">
           <div class="progress-item">
-            <span id="menu-stat-stars" class="progress-val">0 ★</span>
+            <div class="progress-stat-row">
+              <svg class="progress-star-icon" viewBox="0 0 24 24">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <span id="menu-stat-stars" class="progress-val">0</span>
+            </div>
             <span class="progress-lbl">CORE MASTERY</span>
           </div>
           <div class="progress-item">
-            <span id="menu-stat-completed" class="progress-val">0 / 60</span>
+            <div class="progress-stat-row">
+              <span id="menu-stat-completed" class="progress-val">0 / 60</span>
+            </div>
             <span class="progress-lbl">TRANSCENDED</span>
           </div>
         </div>
@@ -114,7 +121,12 @@
         </button>
         <div style="display: flex; flex-direction: column; align-items: center;">
           <h2 style="font-family: var(--font-display); font-size: 1.05rem; font-weight: 800; letter-spacing: 0.12em;">SECTOR ARCHIVE</h2>
-          <span id="levels-star-total" style="font-family: var(--font-mono); font-size: 0.72rem; color: #FBBF24; font-weight: 700;">0 ★</span>
+          <div class="archive-header-star-row">
+            <svg class="archive-star-icon" viewBox="0 0 24 24">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            <span id="levels-star-total" class="archive-star-total">0</span>
+          </div>
         </div>
         <div style="width: 44px;"></div>
       </header>
@@ -187,13 +199,41 @@
           </svg>
         </button>
       </footer>
+
+      <!-- ADMOB TEST BANNER (GAMEPLAY BOTTOM) -->
+      <div id="admob-banner-container" class="admob-banner-container">
+        <div class="admob-test-badge">TEST AD</div>
+        <div class="admob-banner-content">
+          <div class="admob-logo-row">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span class="admob-source-text">Google AdMob</span>
+          </div>
+          <span class="admob-banner-subtext">320x50 Responsive Test Banner // ca-app-pub-3940256099942544/6300978111</span>
+        </div>
+      </div>
     </section>
 
     <!-- MODAL: LEVEL COMPLETE (SECTOR TRANSCENDED) -->
     <div id="modal-complete" class="modal-overlay">
       <div class="modal-card">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(134, 239, 172, 0.12); border: 1px solid rgba(134, 239, 172, 0.4); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: var(--glow-exit);">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-exit)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <div class="modal-card-top-bar">
+          <button id="btn-result-menu" class="btn-modal-top" aria-label="Level Select" title="Sector Archive">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>ARCHIVE</span>
+          </button>
+        </div>
+
+        <div style="width: 54px; height: 54px; border-radius: 50%; background: rgba(134, 239, 172, 0.12); border: 1px solid rgba(134, 239, 172, 0.4); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: var(--glow-exit);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent-exit)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
@@ -218,14 +258,6 @@
         </div>
 
         <div class="result-actions" style="margin-top: 10px;">
-          <button id="btn-result-menu" class="btn-icon" aria-label="Level Select" title="Level Select">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-          </button>
           <button id="btn-result-retry" class="btn-secondary">RETRY</button>
           <button id="btn-result-next" class="btn-primary btn-chargeable" disabled>
             <span class="btn-charge-fill" id="btn-next-charge-fill"></span>
@@ -240,21 +272,21 @@
 
     <!-- MODAL: GAME OVER (ENERGY DEPLETED / HAZARD) -->
     <div id="modal-gameover" class="modal-overlay">
-      <div class="modal-card" style="border-color: rgba(251, 113, 133, 0.4); box-shadow: 0 0 35px rgba(251, 113, 133, 0.25);">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(251, 113, 133, 0.12); border: 1px solid rgba(251, 113, 133, 0.4); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <div class="modal-card modal-gameover-card">
+        <div class="gameover-icon-box">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </div>
-        <h3 id="gameover-title" class="result-title" style="color: var(--accent-danger);">CRITICAL FAILURE</h3>
-        <p id="gameover-subtitle" class="result-subtitle" style="color: var(--text-secondary); margin-bottom: 20px;">
+        <h3 id="gameover-title" class="result-title gameover-heading">CRITICAL FAILURE</h3>
+        <p id="gameover-subtitle" class="result-subtitle" style="color: var(--text-secondary); margin-bottom: 22px;">
           Vector energy depleted.
         </p>
 
         <div class="result-actions">
           <button id="btn-gameover-undo" class="btn-secondary">UNDO</button>
-          <button id="btn-gameover-retry" class="btn-primary" style="background: var(--accent-danger); box-shadow: 0 0 20px rgba(251, 113, 133, 0.45);">RETRY</button>
+          <button id="btn-gameover-retry" class="btn-gameover-retry">RETRY</button>
         </div>
       </div>
     </div>

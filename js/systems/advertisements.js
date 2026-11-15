@@ -1,13 +1,43 @@
 /**
  * Advertisement Manager Abstraction
  * Ready for Google AdMob / Capacitor Plugins
- * Gracefully operates offline or when ads are unavailable.
+ * Gracefully operates offline or with test banners.
  */
+export const ADMOB_TEST_UNITS = {
+  BANNER_ANDROID: 'ca-app-pub-3940256099942544/6300978111',
+  BANNER_IOS: 'ca-app-pub-3940256099942544/2934735716',
+  INTERSTITIAL_ANDROID: 'ca-app-pub-3940256099942544/1033173712',
+  INTERSTITIAL_IOS: 'ca-app-pub-3940256099942544/4411468910',
+  REWARDED_ANDROID: 'ca-app-pub-3940256099942544/5224354917',
+  REWARDED_IOS: 'ca-app-pub-3940256099942544/1712485313'
+};
+
 export class AdvertisementManager {
   constructor() {
     this.completedLevelsCount = 0;
     this.interstitialFrequency = 5; // Show interstitial every 5 completed levels
     this.isAdmobReady = false;
+    this.bannerContainer = null;
+
+    // Connect to test banner container in DOM
+    if (typeof document !== 'undefined') {
+      this.bannerContainer = document.getElementById('admob-banner-container');
+    }
+  }
+
+  showBanner() {
+    if (!this.bannerContainer && typeof document !== 'undefined') {
+      this.bannerContainer = document.getElementById('admob-banner-container');
+    }
+    if (this.bannerContainer) {
+      this.bannerContainer.style.display = 'flex';
+    }
+  }
+
+  hideBanner() {
+    if (this.bannerContainer) {
+      this.bannerContainer.style.display = 'none';
+    }
   }
 
   isAvailable(adType = 'interstitial') {

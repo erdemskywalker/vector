@@ -169,12 +169,12 @@ class VectorApp {
         );
       }
 
-      // 3. Keep overlay visible for 550ms for smooth pacing, then fade into gameplay
+      // 3. Keep overlay visible for 1550ms (+1 second longer for breathing space), then fade into gameplay
       setTimeout(() => {
         if (this.transOverlay) {
           this.transOverlay.classList.remove('active');
         }
-      }, 550);
+      }, 1550);
 
     } catch (err) {
       console.error('Failed to transition to level:', err);

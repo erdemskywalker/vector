@@ -36,7 +36,7 @@ export class MenuUI {
     const completed = this.app.progress.getCompletedCount();
     const current = this.app.progress.getCurrentLevel();
 
-    this.statStars.textContent = `${totalStars} ★`;
+    this.statStars.textContent = totalStars;
     this.statCompleted.textContent = `${completed} / 60`;
 
     if (current > 1 && current <= 60) {
