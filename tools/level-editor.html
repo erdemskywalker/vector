@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VECTOR — Level Editor & Validator</title>
+  <title>VECTOR 2.0 — Level Editor & Validator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
@@ -23,7 +23,7 @@
       display: flex;
       flex-direction: column;
       padding: 24px;
-      gap: 18px;
+      gap: 16px;
       overflow-y: auto;
     }
     main {
@@ -35,35 +35,35 @@
       background: #0B0D12;
       position: relative;
     }
-    h1 { font-size: 1.4rem; font-weight: 800; color: #73D7FF; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; }
-    .subtitle { font-size: 0.75rem; color: #8792A5; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+    h1 { font-size: 1.35rem; font-weight: 800; color: #73D7FF; letter-spacing: 0.1em; }
+    .subtitle { font-size: 0.72rem; color: #8792A5; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
     .section-title { font-size: 0.75rem; font-weight: 700; color: #8792A5; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-    .row { display: flex; gap: 10px; align-items: center; }
+    .row { display: flex; gap: 8px; align-items: center; }
     label { font-size: 0.85rem; color: #F1F5F9; flex: 1; }
     input, select, textarea {
       background: #171C27;
       border: 1px solid #252C3A;
       color: #F1F5F9;
-      padding: 8px 12px;
+      padding: 7px 10px;
       border-radius: 6px;
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       outline: none;
     }
     input:focus, select:focus, textarea:focus { border-color: #73D7FF; }
-    .palette-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .palette-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .palette-btn {
       background: #171C27;
       border: 1px solid #252C3A;
       color: #F1F5F9;
-      padding: 10px 8px;
-      border-radius: 8px;
+      padding: 8px 4px;
+      border-radius: 6px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-      font-size: 0.8rem;
+      gap: 3px;
+      font-size: 0.72rem;
       font-weight: 600;
       transition: all 0.15s;
     }
@@ -72,21 +72,21 @@
       border-color: #73D7FF;
       color: #73D7FF;
     }
-    .tile-badge { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+    .tile-badge { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
     .btn {
       background: #171C27;
       border: 1px solid #252C3A;
       color: #F1F5F9;
-      padding: 10px 16px;
+      padding: 9px 14px;
       border-radius: 8px;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       cursor: pointer;
       transition: all 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
     }
     .btn-primary { background: linear-gradient(135deg, #73D7FF, #A78BFA); color: #0B0D12; border: none; }
     .btn-primary:hover { filter: brightness(1.1); }
@@ -102,13 +102,13 @@
       background: #171C27;
       border: 1px solid #252C3A;
       border-radius: 8px;
-      padding: 12px;
+      padding: 10px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       line-height: 1.4;
       white-space: pre-wrap;
       word-break: break-all;
-      max-height: 140px;
+      max-height: 130px;
       overflow-y: auto;
     }
   </style>
@@ -117,8 +117,8 @@
 
   <aside>
     <div>
-      <h1>VECTOR BUILDER</h1>
-      <div class="subtitle">AI & Level Design Workbench</div>
+      <h1>VECTOR BUILDER 2.0</h1>
+      <div class="subtitle">Cores & Dynamic Energy Workbench</div>
     </div>
 
     <div>
@@ -130,7 +130,6 @@
           <option value="7">7</option>
           <option value="8" selected>8</option>
           <option value="9">9</option>
-          <option value="10">10</option>
         </select>
         <label style="margin-left: 10px;">Height:</label>
         <select id="sel-h">
@@ -138,29 +137,30 @@
           <option value="7">7</option>
           <option value="8" selected>8</option>
           <option value="9">9</option>
-          <option value="10">10</option>
         </select>
       </div>
     </div>
 
     <div>
       <div class="section-title">Level Metadata</div>
-      <div class="row" style="margin-bottom: 8px;">
+      <div class="row" style="margin-bottom: 6px;">
         <label>ID:</label>
-        <input type="number" id="inp-id" value="1" style="width: 80px;">
-        <label style="margin-left: 10px;">World:</label>
+        <input type="number" id="inp-id" value="1" style="width: 70px;">
+        <label style="margin-left: 6px;">World:</label>
         <select id="sel-world">
           <option value="origin">Origin</option>
-          <option value="keys">Keys</option>
+          <option value="keys">Cores</option>
         </select>
       </div>
-      <div class="row" style="margin-bottom: 8px;">
+      <div class="row" style="margin-bottom: 6px;">
         <label>Name:</label>
-        <input type="text" id="inp-name" value="Custom Level" style="width: 180px;">
+        <input type="text" id="inp-name" value="Custom Sector" style="width: 170px;">
       </div>
       <div class="row">
-        <label>Par Moves:</label>
-        <input type="number" id="inp-par" value="4" style="width: 80px;">
+        <label>Par:</label>
+        <input type="number" id="inp-par" value="4" style="width: 65px;">
+        <label style="margin-left: 6px;">MaxMoves:</label>
+        <input type="number" id="inp-max" value="7" style="width: 65px;">
       </div>
     </div>
 
@@ -184,17 +184,21 @@
           Exit (E)
         </button>
         <button class="palette-btn" data-tile="K">
-          <span class="tile-badge" style="background: #FDE047;"></span>
-          Key (K)
+          <span class="tile-badge" style="background: #73D7FF; border: 1px solid #FDE047;"></span>
+          Core (K)
         </button>
-        <button class="palette-btn" data-tile="D">
-          <span class="tile-badge" style="background: #F59E0B;"></span>
-          Door (D)
+        <button class="palette-btn" data-tile="C">
+          <span class="tile-badge" style="background: #232B3D; border: 1px dashed #73D7FF;"></span>
+          Cracked (C)
+        </button>
+        <button class="palette-btn" data-tile="X">
+          <span class="tile-badge" style="background: #FB7185;"></span>
+          Hazard (X)
         </button>
       </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 8px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
       <button id="btn-solve" class="btn btn-primary">SOLVE & VERIFY (BFS)</button>
       <div class="row">
         <button id="btn-export" class="btn" style="flex: 1;">COPY JSON</button>
@@ -204,13 +208,13 @@
 
     <div>
       <div class="section-title">Solver Output / Validation</div>
-      <div id="status-log" class="status-box">Ready. Draw maze and click SOLVE.</div>
+      <div id="status-log" class="status-box">Ready. Draw sector and click SOLVE.</div>
     </div>
 
     <div>
       <div class="section-title">Import JSON</div>
-      <textarea id="txt-import" rows="3" placeholder="Paste level JSON here..." style="width: 100%; resize: vertical;"></textarea>
-      <button id="btn-import" class="btn" style="width: 100%; margin-top: 6px;">LOAD JSON</button>
+      <textarea id="txt-import" rows="2" placeholder="Paste sector JSON..." style="width: 100%; resize: vertical;"></textarea>
+      <button id="btn-import" class="btn" style="width: 100%; margin-top: 4px;">LOAD JSON</button>
     </div>
   </aside>
 
@@ -271,6 +275,25 @@
           if (tile === '#') {
             ctx.fillStyle = '#1E2536';
             ctx.fillRect(px + 2, py + 2, cellSize - 4, cellSize - 4);
+          } else if (tile === 'C') {
+            ctx.fillStyle = '#232B3D';
+            ctx.fillRect(px + 2, py + 2, cellSize - 4, cellSize - 4);
+            ctx.strokeStyle = '#73D7FF';
+            ctx.beginPath();
+            ctx.moveTo(px + 4, py + 4);
+            ctx.lineTo(px + cellSize - 4, py + cellSize - 4);
+            ctx.stroke();
+          } else if (tile === 'X') {
+            ctx.fillStyle = 'rgba(251, 113, 133, 0.2)';
+            ctx.fillRect(px + 2, py + 2, cellSize - 4, cellSize - 4);
+            ctx.strokeStyle = '#FB7185';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(px + 6, py + 6);
+            ctx.lineTo(px + cellSize - 6, py + cellSize - 6);
+            ctx.moveTo(px + cellSize - 6, py + 6);
+            ctx.lineTo(px + 6, py + cellSize - 6);
+            ctx.stroke();
           } else if (tile === 'S') {
             ctx.fillStyle = '#73D7FF';
             ctx.beginPath();
@@ -283,13 +306,10 @@
             ctx.arc(px + cellSize/2, py + cellSize/2, cellSize * 0.3, 0, Math.PI * 2);
             ctx.stroke();
           } else if (tile === 'K') {
-            ctx.fillStyle = '#FDE047';
+            ctx.fillStyle = '#73D7FF';
             ctx.beginPath();
-            ctx.arc(px + cellSize/2, py + cellSize/2, cellSize * 0.25, 0, Math.PI * 2);
+            ctx.arc(px + cellSize/2, py + cellSize/2, cellSize * 0.24, 0, Math.PI * 2);
             ctx.fill();
-          } else if (tile === 'D') {
-            ctx.fillStyle = '#F59E0B';
-            ctx.fillRect(px + 4, py + 4, cellSize - 8, cellSize - 8);
           }
         }
       }
@@ -303,7 +323,6 @@
 
       if (x < 0 || x >= width || y < 0 || y >= height) return;
 
-      // Unique tile checks
       if (currentBrush === 'S' || currentBrush === 'E') {
         for (let r = 0; r < height; r++) {
           for (let c = 0; c < width; c++) {
@@ -328,18 +347,12 @@
       });
     });
 
-    document.getElementById('sel-w').addEventListener('change', (e) => {
-      initGrid(parseInt(e.target.value), height);
-    });
-    document.getElementById('sel-h').addEventListener('change', (e) => {
-      initGrid(width, parseInt(e.target.value));
-    });
-
-    document.getElementById('btn-clear').addEventListener('click', () => {
-      initGrid(width, height);
-    });
+    document.getElementById('sel-w').addEventListener('change', (e) => initGrid(parseInt(e.target.value), height));
+    document.getElementById('sel-h').addEventListener('change', (e) => initGrid(width, parseInt(e.target.value)));
+    document.getElementById('btn-clear').addEventListener('click', () => initGrid(width, height));
 
     document.getElementById('btn-solve').addEventListener('click', () => {
+      const maxVal = document.getElementById('inp-max').value;
       const levelObj = {
         id: parseInt(document.getElementById('inp-id').value) || 1,
         world: document.getElementById('sel-world').value,
@@ -347,6 +360,7 @@
         width: width,
         height: height,
         par: parseInt(document.getElementById('inp-par').value) || 4,
+        maxMoves: maxVal ? parseInt(maxVal) : null,
         grid: grid.map(r => r.join(''))
       };
 
@@ -358,9 +372,12 @@
           statusLog.style.color = '#86EFAC';
           statusLog.textContent = `SOLVABLE!\nOptimal Par: ${solution.moves} moves\nSequence: ${solution.path.join(' -> ')}`;
           document.getElementById('inp-par').value = solution.moves;
+          if (!levelObj.maxMoves) {
+            document.getElementById('inp-max').value = solution.moves + 3;
+          }
         } else {
           statusLog.style.color = '#FB7185';
-          statusLog.textContent = `UNSOLVABLE!\n${solution.error || 'No valid path from Start to Exit.'}`;
+          statusLog.textContent = `UNSOLVABLE!\n${solution.error || 'No valid path to exit.'}`;
         }
       } catch (err) {
         statusLog.style.color = '#FB7185';
@@ -369,6 +386,7 @@
     });
 
     document.getElementById('btn-export').addEventListener('click', () => {
+      const maxVal = document.getElementById('inp-max').value;
       const levelObj = {
         id: parseInt(document.getElementById('inp-id').value) || 1,
         world: document.getElementById('sel-world').value,
@@ -376,19 +394,18 @@
         width: width,
         height: height,
         par: parseInt(document.getElementById('inp-par').value) || 4,
+        maxMoves: maxVal ? parseInt(maxVal) : null,
         grid: grid.map(r => r.join(''))
       };
 
-      const jsonStr = JSON.stringify(levelObj, null, 2);
-      navigator.clipboard.writeText(jsonStr);
+      navigator.clipboard.writeText(JSON.stringify(levelObj, null, 2));
       statusLog.style.color = '#73D7FF';
       statusLog.textContent = 'JSON copied to clipboard!';
     });
 
     document.getElementById('btn-import').addEventListener('click', () => {
       try {
-        const text = document.getElementById('txt-import').value;
-        const obj = JSON.parse(text);
+        const obj = JSON.parse(document.getElementById('txt-import').value);
         const parsed = LevelParser.parse(obj);
 
         width = parsed.width;
@@ -400,11 +417,12 @@
         document.getElementById('inp-id').value = parsed.id;
         document.getElementById('inp-name').value = parsed.name;
         document.getElementById('inp-par').value = parsed.par;
+        document.getElementById('inp-max').value = parsed.maxMoves || '';
         document.getElementById('sel-world').value = parsed.world;
 
         render();
         statusLog.style.color = '#86EFAC';
-        statusLog.textContent = `Loaded level "${parsed.name}" (${width}x${height})`;
+        statusLog.textContent = `Loaded sector "${parsed.name}" (${width}x${height})`;
       } catch (err) {
         statusLog.style.color = '#FB7185';
         statusLog.textContent = `Import failed: ${err.message}`;

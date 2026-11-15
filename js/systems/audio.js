@@ -1,6 +1,5 @@
 /**
- * Procedural Web Audio Synthesizer & Feedback Manager
- * Zero external asset dependencies, zero latency, ultra-lightweight.
+ * Procedural Web Audio Synthesizer & Feedback Manager — VECTOR 2.0
  */
 export class AudioManager {
   constructor(progressManager) {
@@ -12,7 +11,6 @@ export class AudioManager {
   initAudioContext() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (AudioContextClass) {
-      // Lazy init on first user interaction
       const unlockAudio = () => {
         if (!this.ctx) {
           this.ctx = new AudioContextClass();
@@ -65,8 +63,8 @@ export class AudioManager {
       const gain = this.ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(180, this.ctx.currentTime + 0.08);
+      osc.frequency.setValueAtTime(340, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(160, this.ctx.currentTime + 0.08);
 
       gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
@@ -90,22 +88,48 @@ export class AudioManager {
       const gain = this.ctx.createGain();
 
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(120, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(130, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.09);
 
       gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.09);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
 
       osc.start();
-      osc.stop(this.ctx.currentTime + 0.1);
+      osc.stop(this.ctx.currentTime + 0.09);
     } catch (e) {}
   }
 
-  playKey() {
-    this.triggerHaptic([15, 30, 20]);
+  playWallCrack() {
+    this.triggerHaptic([20, 20, 30]);
+    if (!this.isSoundEnabled()) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(260, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } catch (e) {}
+  }
+
+  playCore() {
+    this.triggerHaptic([15, 30, 25]);
     if (!this.isSoundEnabled()) return;
     this.ensureContext();
     if (!this.ctx) return;
@@ -120,19 +144,19 @@ export class AudioManager {
         osc.frequency.setValueAtTime(freq, now + idx * 0.05);
 
         gain.gain.setValueAtTime(0.15, now + idx * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.16);
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
         osc.start(now + idx * 0.05);
-        osc.stop(now + idx * 0.05 + 0.15);
+        osc.stop(now + idx * 0.05 + 0.16);
       });
     } catch (e) {}
   }
 
-  playDoor() {
-    this.triggerHaptic(35);
+  playPortalActive() {
+    this.triggerHaptic([25, 40, 50]);
     if (!this.isSoundEnabled()) return;
     this.ensureContext();
     if (!this.ctx) return;
@@ -142,18 +166,44 @@ export class AudioManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(240, now);
-      osc.frequency.exponentialRampToValueAtTime(480, now + 0.12);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
 
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.12);
+      osc.stop(now + 0.25);
+    } catch (e) {}
+  }
+
+  playDeath() {
+    this.triggerHaptic([50, 40, 80]);
+    if (!this.isSoundEnabled()) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.28);
+
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.28);
     } catch (e) {}
   }
 
@@ -164,7 +214,7 @@ export class AudioManager {
     if (!this.ctx) return;
 
     try {
-      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      const notes = [523.25, 659.25, 783.99, 1046.50];
       const now = this.ctx.currentTime;
 
       notes.forEach((freq, i) => {
@@ -196,7 +246,7 @@ export class AudioManager {
       const gain = this.ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(900, this.ctx.currentTime);
+      osc.frequency.setValueAtTime(920, this.ctx.currentTime);
       gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
 

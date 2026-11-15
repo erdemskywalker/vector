@@ -7,14 +7,16 @@ export class GameEngine {
     this.animationQueue = [];
     this.animatingPathIndex = 0;
     this.currentSegmentProgress = 0;
-    this.slideSpeed = 22; // cells per second for snappy arcade feel
+    this.slideSpeed = 22; // Snappy arcade speed
 
     // Event hooks
     this.onMoveStart = null;
     this.onMoveStep = null;
-    this.onKeyCollect = null;
-    this.onDoorUnlock = null;
+    this.onCoreCollect = null;
+    this.onWallCrack = null;
     this.onWallHit = null;
+    this.onPortalActivate = null;
+    this.onPlayerDeath = null;
     this.onLevelComplete = null;
     this.onStateChange = null;
   }
@@ -28,7 +30,7 @@ export class GameEngine {
   }
 
   move(directionKey) {
-    if (!this.state || this.state.isMoving || this.state.isCompleted) {
+    if (!this.state || this.state.isMoving || this.state.isCompleted || this.state.isDead) {
       return false;
     }
 
@@ -42,25 +44,23 @@ export class GameEngine {
       this.state.playerX,
       this.state.playerY,
       dir,
-      this.state.keysHeld,
-      this.state.collectedKeys,
-      this.state.unlockedDoors
+      this.state.totalCores,
+      this.state.collectedCores,
+      this.state.brokenCrackedWalls
     );
 
     if (!result.moved) {
-      // Wall bump feedback
       if (this.onWallHit) {
         this.onWallHit(this.state.playerX, this.state.playerY, dir, true);
       }
       return false;
     }
 
-    // Save state for undo before moving
+    // Save snapshot for undo before applying move
     this.state.saveSnapshot();
     this.state.moveCount++;
     this.state.isMoving = true;
 
-    // Setup animation path
     this.animationResult = result;
     this.animationQueue = [
       { x: this.state.playerX, y: this.state.playerY },
@@ -84,7 +84,6 @@ export class GameEngine {
       return;
     }
 
-    // dt is in seconds
     const progressDelta = dt * this.slideSpeed;
     this.currentSegmentProgress += progressDelta;
 
@@ -95,30 +94,51 @@ export class GameEngine {
       this.currentSegmentProgress = 0;
       this.animatingPathIndex++;
 
-      // Current reached node
       this.state.visualX = p1.x;
       this.state.visualY = p1.y;
 
-      // Handle item collections mid-slide
-      if (p1.keyCollected) {
-        this.state.collectedKeys.add(p1.coord);
-        this.state.keysHeld++;
-        if (this.onKeyCollect) this.onKeyCollect(p1.x, p1.y);
-      }
-      if (p1.doorUnlocked) {
-        this.state.unlockedDoors.add(p1.coord);
-        this.state.keysHeld--;
-        if (this.onDoorUnlock) this.onDoorUnlock(p1.x, p1.y);
+      // Core collection mid-slide
+      if (p1.coreCollected) {
+        this.state.collectedCores.add(p1.coord);
+        const remaining = Math.max(0, this.state.totalCores - this.state.collectedCores.size);
+        if (this.onCoreCollect) this.onCoreCollect(p1.x, p1.y, remaining);
+
+        if (this.state.isPortalActive() && this.onPortalActivate) {
+          this.onPortalActivate();
+        }
       }
 
-      // Check if finished entire path
+      // Hazard contact mid-slide
+      if (p1.hitHazard) {
+        this.finishHazardDeath(p1.x, p1.y);
+        return;
+      }
+
+      // End of path
       if (this.animatingPathIndex >= this.animationQueue.length - 1) {
         this.finishSlide();
       }
     } else {
-      // Interpolate visual position
       this.state.visualX = p0.x + (p1.x - p0.x) * this.currentSegmentProgress;
       this.state.visualY = p0.y + (p1.y - p0.y) * this.currentSegmentProgress;
+    }
+  }
+
+  finishHazardDeath(x, y) {
+    this.state.playerX = x;
+    this.state.playerY = y;
+    this.state.visualX = x;
+    this.state.visualY = y;
+    this.state.isMoving = false;
+    this.state.isDead = true;
+    this.state.deathReason = 'HAZARD';
+    this.animationQueue = [];
+
+    if (this.onPlayerDeath) {
+      this.onPlayerDeath('HAZARD', x, y);
+    }
+    if (this.onStateChange) {
+      this.onStateChange(this.state);
     }
   }
 
@@ -128,20 +148,37 @@ export class GameEngine {
     this.state.playerY = res.endY;
     this.state.visualX = res.endX;
     this.state.visualY = res.endY;
-    this.state.keysHeld = res.finalKeysHeld;
 
-    res.newlyCollectedKeys.forEach(k => this.state.collectedKeys.add(k));
-    res.newlyUnlockedDoors.forEach(d => this.state.unlockedDoors.add(d));
+    res.newlyCollectedCores.forEach(c => this.state.collectedCores.add(c));
+
+    // Handle cracked walls shattering
+    if (res.newlyBrokenCracked.length > 0) {
+      res.newlyBrokenCracked.forEach(c => this.state.brokenCrackedWalls.add(c));
+      if (this.onWallCrack) {
+        this.onWallCrack(res.newlyBrokenCracked);
+      }
+    }
 
     this.state.isMoving = false;
     this.animationQueue = [];
 
-    // Trigger wall hit at the stop point if not exit
+    // Wall impact if stopped normally
     if (!res.reachedExit && this.onWallHit) {
       this.onWallHit(res.endX, res.endY, null, false);
     }
 
-    if (res.reachedExit) {
+    // Energy / Max Moves depletion check
+    if (
+      this.state.maxMoves !== null &&
+      this.state.moveCount >= this.state.maxMoves &&
+      !res.reachedExit
+    ) {
+      this.state.isDead = true;
+      this.state.deathReason = 'ENERGY_DEPLETED';
+      if (this.onPlayerDeath) {
+        this.onPlayerDeath('ENERGY_DEPLETED', res.endX, res.endY);
+      }
+    } else if (res.reachedExit) {
       this.state.isCompleted = true;
       if (this.onLevelComplete) {
         this.onLevelComplete({

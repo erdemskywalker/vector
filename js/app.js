@@ -61,18 +61,42 @@ class VectorApp {
       this.audio.playWall();
     };
 
-    this.engine.onKeyCollect = (x, y) => {
-      const px = this.renderer.originX + (x + 0.5) * this.renderer.cellSize;
-      const py = this.renderer.originY + (y + 0.5) * this.renderer.cellSize;
-      this.renderer.effects.addBurst(px, py, '#FDE047', 14);
-      this.audio.playKey();
+    this.engine.onWallCrack = (brokenCoords) => {
+      brokenCoords.forEach(coord => {
+        const [cx, cy] = coord.split(',').map(Number);
+        const px = this.renderer.originX + (cx + 0.5) * this.renderer.cellSize;
+        const py = this.renderer.originY + (cy + 0.5) * this.renderer.cellSize;
+        this.renderer.effects.addDebris(px, py, 14);
+      });
+      this.audio.playWallCrack();
     };
 
-    this.engine.onDoorUnlock = (x, y) => {
+    this.engine.onCoreCollect = (x, y, remaining) => {
       const px = this.renderer.originX + (x + 0.5) * this.renderer.cellSize;
       const py = this.renderer.originY + (y + 0.5) * this.renderer.cellSize;
-      this.renderer.effects.addBurst(px, py, '#F59E0B', 12);
-      this.audio.playDoor();
+      this.renderer.effects.addBurst(px, py, '#73D7FF', 16);
+      this.audio.playCore();
+    };
+
+    this.engine.onPortalActivate = () => {
+      const exitPos = this.engine.state.exit;
+      const px = this.renderer.originX + (exitPos.x + 0.5) * this.renderer.cellSize;
+      const py = this.renderer.originY + (exitPos.y + 0.5) * this.renderer.cellSize;
+      this.renderer.effects.addShockwave(px, py, '#86EFAC', 80);
+      this.audio.playPortalActive();
+    };
+
+    this.engine.onPlayerDeath = (reason, x, y) => {
+      const px = this.renderer.originX + (x + 0.5) * this.renderer.cellSize;
+      const py = this.renderer.originY + (y + 0.5) * this.renderer.cellSize;
+
+      this.renderer.effects.addBurst(px, py, '#FB7185', 28);
+      this.renderer.effects.triggerImpact(8);
+      this.audio.playDeath();
+
+      setTimeout(() => {
+        this.gameplayUI.showGameOver(reason);
+      }, 400);
     };
 
     this.engine.onLevelComplete = ({ moves, par }) => {
@@ -80,7 +104,7 @@ class VectorApp {
       const px = this.renderer.originX + (exitPos.x + 0.5) * this.renderer.cellSize;
       const py = this.renderer.originY + (exitPos.y + 0.5) * this.renderer.cellSize;
 
-      this.renderer.effects.addBurst(px, py, '#86EFAC', 24);
+      this.renderer.effects.addBurst(px, py, '#86EFAC', 26);
       this.audio.playComplete();
 
       const lvlId = this.engine.state.level.id;

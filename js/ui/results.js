@@ -29,14 +29,15 @@ export class ResultsUI {
       this.close();
 
       const currentLvl = this.app.engine.state.level.id;
-      if (currentLvl < 60) {
-        this.app.ads.checkAndShowLevelInterstitial(() => {
-          this.app.loadAndStartLevel(currentLvl + 1);
-        });
-      } else {
-        // Grand finale finished!
-        this.app.router.navigate('menu');
-      }
+      const nextLvl = currentLvl + 1;
+
+      // Pacing: Return to Level Select to display unlock animation & stars count
+      this.app.ads.checkAndShowLevelInterstitial(() => {
+        if (nextLvl <= 60) {
+          this.app.levelSelectUI.highlightUnlock(nextLvl);
+        }
+        this.app.router.navigate('levels');
+      });
     });
   }
 
@@ -50,16 +51,14 @@ export class ResultsUI {
       s.style.display = 'none';
     });
 
-    // Star subtitle
     if (stars === 3) {
       this.subtitle.textContent = 'PERFECT EXECUTION';
     } else if (stars === 2) {
-      this.subtitle.textContent = 'GREAT RUN';
+      this.subtitle.textContent = 'SECTOR SECURED';
     } else {
-      this.subtitle.textContent = 'LEVEL CLEARED';
+      this.subtitle.textContent = 'SECTOR CLEARED';
     }
 
-    // Sequence star display
     setTimeout(() => {
       if (stars >= 1) {
         this.star1.style.display = 'block';

@@ -7,14 +7,27 @@ export const DIRECTIONS = {
   RIGHT: { x: 1, y: 0, name: 'RIGHT' }
 };
 
-export function calculateSlide(grid, width, height, startX, startY, dir, currentKeysHeld, collectedKeysSet, unlockedDoorsSet) {
+export function calculateSlide(
+  grid,
+  width,
+  height,
+  startX,
+  startY,
+  dir,
+  totalCores = 0,
+  collectedCoresSet = new Set(),
+  brokenCrackedSet = new Set()
+) {
   let x = startX;
   let y = startY;
-  let keysHeld = currentKeysHeld;
   const path = [];
-  const newlyCollectedKeys = [];
-  const newlyUnlockedDoors = [];
+  const newlyCollectedCores = [];
+  const newlyBrokenCracked = [];
   let reachedExit = false;
+  let hitHazard = false;
+  let portalBecameActive = false;
+
+  const currentCoresCount = collectedCoresSet.size;
 
   while (true) {
     const nextX = x + dir.x;
@@ -28,54 +41,75 @@ export function calculateSlide(grid, width, height, startX, startY, dir, current
     const tile = grid[nextY][nextX];
     const coord = `${nextX},${nextY}`;
 
-    // 2. Wall obstacle check
+    // 2. Solid wall check
     if (tile === TILE_TYPES.WALL) {
       break;
     }
 
-    // 3. Locked door check
-    if (tile === TILE_TYPES.DOOR) {
-      const isAlreadyUnlocked = unlockedDoorsSet.has(coord) || newlyUnlockedDoors.includes(coord);
-      if (!isAlreadyUnlocked) {
-        if (keysHeld > 0) {
-          keysHeld--;
-          newlyUnlockedDoors.push(coord);
-        } else {
-          // Blocked by locked door without a key
-          break;
+    // 3. Cracked wall check
+    if (tile === TILE_TYPES.CRACKED) {
+      const isAlreadyBroken = brokenCrackedSet.has(coord) || newlyBrokenCracked.includes(coord);
+      if (!isAlreadyBroken) {
+        // Blocks cube, but will shatter upon impact
+        newlyBrokenCracked.push(coord);
+        break;
+      }
+      // If already broken, passes right through
+    }
+
+    // Advance to cell
+    x = nextX;
+    y = nextY;
+
+    // 4. Hazard contact check
+    if (tile === TILE_TYPES.HAZARD) {
+      hitHazard = true;
+      path.push({
+        x,
+        y,
+        coord,
+        hitHazard: true,
+        coreCollected: false,
+        reachedExit: false
+      });
+      break;
+    }
+
+    // 5. Energy Core collection check
+    let coreCollected = false;
+    if (tile === TILE_TYPES.CORE) {
+      const isAlreadyCollected = collectedCoresSet.has(coord) || newlyCollectedCores.includes(coord);
+      if (!isAlreadyCollected) {
+        newlyCollectedCores.push(coord);
+        coreCollected = true;
+        if (currentCoresCount + newlyCollectedCores.length >= totalCores) {
+          portalBecameActive = true;
         }
       }
     }
 
-    // Move to next cell
-    x = nextX;
-    y = nextY;
-
-    // 4. Key collection check
-    let keyCollected = false;
-    if (tile === TILE_TYPES.KEY) {
-      const isAlreadyCollected = collectedKeysSet.has(coord) || newlyCollectedKeys.includes(coord);
-      if (!isAlreadyCollected) {
-        keysHeld++;
-        newlyCollectedKeys.push(coord);
-        keyCollected = true;
+    // 6. Exit Portal check
+    let reached = false;
+    if (tile === TILE_TYPES.EXIT) {
+      const isPortalActive = (currentCoresCount + newlyCollectedCores.length >= totalCores);
+      if (isPortalActive) {
+        reached = true;
+        reachedExit = true;
       }
+      // If portal not active yet, cube slides straight through!
     }
-
-    const doorUnlocked = newlyUnlockedDoors.includes(coord);
 
     path.push({
       x,
       y,
       coord,
-      keyCollected,
-      doorUnlocked
+      coreCollected,
+      hitHazard: false,
+      reachedExit: reached
     });
 
-    // 5. Exit detection
-    if (tile === TILE_TYPES.EXIT) {
-      reachedExit = true;
-      break;
+    if (reached) {
+      break; // Exit caught the player; level completed!
     }
   }
 
@@ -85,8 +119,9 @@ export function calculateSlide(grid, width, height, startX, startY, dir, current
     endY: y,
     path,
     reachedExit,
-    newlyCollectedKeys,
-    newlyUnlockedDoors,
-    finalKeysHeld: keysHeld
+    hitHazard,
+    portalBecameActive,
+    newlyCollectedCores,
+    newlyBrokenCracked
   };
 }

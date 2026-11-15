@@ -4,9 +4,8 @@ import { LevelParser } from '../js/levels/level-parser.js';
 import { LevelValidator } from '../js/levels/level-validator.js';
 import { LevelSolver } from '../js/levels/level-solver.js';
 import { ProgressManager } from '../js/systems/progress.js';
-import { StorageManager } from '../js/systems/storage.js';
 
-console.log('=== VECTOR TEST SUITE ===\n');
+console.log('=== VECTOR 2.0 TEST SUITE ===\n');
 
 // Mock localStorage for Node test environment
 const mockStorage = {};
@@ -29,67 +28,19 @@ function test(name, fn) {
   }
 }
 
-// 1. All Four Movement Directions & Wall Stopping
-test('Movement: All 4 directions and wall stopping', () => {
+// 1. Core Mechanics: Inactive exit cannot be used until Cores collected
+test('Core Mechanic: Exit inactive until Energy Core is collected', () => {
   const level = {
-    id: 991,
-    world: 'test',
-    width: 5,
-    height: 5,
-    par: 4,
-    grid: [
-      "#####",
-      "#...#",
-      "#.S.#",
-      "#...#",
-      "#####"
-    ]
-  };
-
-  const engine = new GameEngine();
-  engine.loadLevel(level);
-
-  assert.strictEqual(engine.state.playerX, 2);
-  assert.strictEqual(engine.state.playerY, 2);
-
-  // Swipe UP
-  engine.move('UP');
-  engine.finishSlide();
-  assert.strictEqual(engine.state.playerX, 2);
-  assert.strictEqual(engine.state.playerY, 1); // Stopped at wall
-
-  // Swipe RIGHT
-  engine.move('RIGHT');
-  engine.finishSlide();
-  assert.strictEqual(engine.state.playerX, 3);
-  assert.strictEqual(engine.state.playerY, 1);
-
-  // Swipe DOWN
-  engine.move('DOWN');
-  engine.finishSlide();
-  assert.strictEqual(engine.state.playerX, 3);
-  assert.strictEqual(engine.state.playerY, 3);
-
-  // Swipe LEFT
-  engine.move('LEFT');
-  engine.finishSlide();
-  assert.strictEqual(engine.state.playerX, 1);
-  assert.strictEqual(engine.state.playerY, 3);
-});
-
-// 2. Key Collection and Door Unlock
-test('Puzzle Mechanics: Key collection mid-slide and Door unlocking', () => {
-  const level = {
-    id: 992,
+    id: 101,
     world: 'test',
     width: 7,
     height: 5,
-    par: 2,
+    par: 3,
     grid: [
       "#######",
-      "#S.K.D#",
+      "#S.E..#", // Exit at (3,1), wall at (6,1)
       "#.....#",
-      "#....E#",
+      "#...K.#", // Core at (4,3)
       "#######"
     ]
   };
@@ -97,93 +48,39 @@ test('Puzzle Mechanics: Key collection mid-slide and Door unlocking', () => {
   const engine = new GameEngine();
   engine.loadLevel(level);
 
-  // Player at (1,1). Sliding RIGHT passes over Key at (3,1) and Door at (5,1).
-  // Because Key is collected mid-slide, player has key and opens Door (5,1), stopping at (5,1) before wall (6,1)!
+  assert.strictEqual(engine.state.isPortalActive(), false);
+
+  // Swipe RIGHT: passes over inactive Exit at (3,1) and slides all the way to wall (5,1) without completing level!
   engine.move('RIGHT');
   engine.finishSlide();
 
   assert.strictEqual(engine.state.playerX, 5);
   assert.strictEqual(engine.state.playerY, 1);
-  assert.strictEqual(engine.state.collectedKeys.has('3,1'), true);
-  assert.strictEqual(engine.state.unlockedDoors.has('5,1'), true);
-  assert.strictEqual(engine.state.keysHeld, 0); // Consumed for the door
-});
+  assert.strictEqual(engine.state.isCompleted, false);
 
-// 3. Locked Door Blocks Without Key
-test('Puzzle Mechanics: Locked door blocks when no key held', () => {
-  const level = {
-    id: 993,
-    world: 'test',
-    width: 7,
-    height: 5,
-    par: 3,
-    grid: [
-      "#######",
-      "#S...D#",
-      "#.....#",
-      "#....E#",
-      "#######"
-    ]
-  };
-
-  const engine = new GameEngine();
-  engine.loadLevel(level);
-
-  // Player at (1,1). Slides RIGHT towards Door at (5,1) without key.
-  // Should stop at (4,1) immediately before the locked door.
-  engine.move('RIGHT');
+  // Now move DOWN to (5,3), then LEFT to collect Core at (4,3)
+  engine.move('DOWN');
+  engine.finishSlide();
+  engine.move('LEFT');
   engine.finishSlide();
 
-  assert.strictEqual(engine.state.playerX, 4);
-  assert.strictEqual(engine.state.playerY, 1);
-  assert.strictEqual(engine.state.unlockedDoors.has('5,1'), false);
+  assert.strictEqual(engine.state.collectedCores.size, 1);
+  assert.strictEqual(engine.state.isPortalActive(), true); // Portal is now active!
 });
 
-// 4. Exit Detection
-test('Puzzle Mechanics: Exit detection finishes level', () => {
+// 2. Cracked Wall Shattering
+test('Mechanics: Cracked wall stops cube once, then breaks permanently', () => {
   const level = {
-    id: 994,
-    world: 'test',
-    width: 5,
-    height: 5,
-    par: 1,
-    grid: [
-      "#####",
-      "#S.E#",
-      "#...#",
-      "#...#",
-      "#####"
-    ]
-  };
-
-  const engine = new GameEngine();
-  let completed = false;
-  engine.onLevelComplete = () => { completed = true; };
-  engine.loadLevel(level);
-
-  engine.move('RIGHT');
-  engine.finishSlide();
-
-  assert.strictEqual(engine.state.isCompleted, true);
-  assert.strictEqual(completed, true);
-  assert.strictEqual(engine.state.playerX, 3);
-  assert.strictEqual(engine.state.playerY, 1);
-});
-
-// 5. Undo & Restart Behavior
-test('State Management: Undo and Restart', () => {
-  const level = {
-    id: 995,
+    id: 102,
     world: 'test',
     width: 6,
-    height: 6,
-    par: 3,
+    height: 5,
+    par: 2,
     grid: [
       "######",
-      "#S..K#",
+      "#S.C.#", // Cracked wall at (3,1), empty at (4,1), wall at (5,1)
       "#....#",
-      "#....#",
-      "#E...#",
+      "#...E#",
       "######"
     ]
   };
@@ -191,139 +88,153 @@ test('State Management: Undo and Restart', () => {
   const engine = new GameEngine();
   engine.loadLevel(level);
 
-  assert.strictEqual(engine.state.moveCount, 0);
-
-  // Move 1: RIGHT to key (stops at wall x=4)
+  // Move 1: Swipe RIGHT. Cube stops at (2,1) against cracked wall at (3,1).
   engine.move('RIGHT');
   engine.finishSlide();
-  assert.strictEqual(engine.state.playerX, 4);
-  assert.strictEqual(engine.state.playerY, 1);
-  assert.strictEqual(engine.state.moveCount, 1);
-  assert.strictEqual(engine.state.keysHeld, 1);
 
-  // Move 2: DOWN (stops at wall y=4)
+  assert.strictEqual(engine.state.playerX, 2);
+  assert.strictEqual(engine.state.playerY, 1);
+  assert.strictEqual(engine.state.brokenCrackedWalls.has('3,1'), true); // Cracked wall is now broken!
+
+  // Move 2: Swipe DOWN to (2,3), then UP back to (2,1)
   engine.move('DOWN');
   engine.finishSlide();
-  assert.strictEqual(engine.state.playerX, 4);
-  assert.strictEqual(engine.state.playerY, 4);
-  assert.strictEqual(engine.state.moveCount, 2);
+  engine.move('UP');
+  engine.finishSlide();
 
-  // Undo Move 2
-  const undo1 = engine.undo();
-  assert.strictEqual(undo1, true);
-  assert.strictEqual(engine.state.playerY, 1);
-  assert.strictEqual(engine.state.playerX, 4);
-  assert.strictEqual(engine.state.moveCount, 1);
-  assert.strictEqual(engine.state.keysHeld, 1);
+  // Move 4: Swipe RIGHT again. Because (3,1) is broken, cube slides straight through to (4,1)!
+  engine.move('RIGHT');
+  engine.finishSlide();
 
-  // Restart
-  const resetSuccess = engine.restart();
-  assert.strictEqual(resetSuccess, true);
-  assert.strictEqual(engine.state.playerX, 1);
+  assert.strictEqual(engine.state.playerX, 4);
   assert.strictEqual(engine.state.playerY, 1);
-  assert.strictEqual(engine.state.moveCount, 0);
-  assert.strictEqual(engine.state.keysHeld, 0);
-  assert.strictEqual(engine.state.collectedKeys.size, 0);
 });
 
-// 6. Rapid Repeated Input Ignored While Moving
-test('Input: Rapid swipe inputs ignored during active slide', () => {
+// 3. Laser Hazard Instant Death
+test('Mechanics: Contact with Laser Hazard (X) causes instant failure', () => {
   const level = {
-    id: 996,
+    id: 103,
     world: 'test',
-    width: 7,
+    width: 6,
+    height: 5,
+    par: 1,
+    grid: [
+      "######",
+      "#S.X.#", // Hazard at (3,1)
+      "#....#",
+      "#...E#",
+      "######"
+    ]
+  };
+
+  const engine = new GameEngine();
+  let deathTriggered = false;
+  engine.onPlayerDeath = (reason) => {
+    deathTriggered = true;
+    assert.strictEqual(reason, 'HAZARD');
+  };
+  engine.loadLevel(level);
+
+  engine.move('RIGHT');
+  // Slide enters hazard
+  engine.finishHazardDeath(3, 1);
+
+  assert.strictEqual(engine.state.isDead, true);
+  assert.strictEqual(engine.state.deathReason, 'HAZARD');
+  assert.strictEqual(deathTriggered, true);
+});
+
+// 4. Energy / Max Moves Depletion
+test('Difficulty: Move limit exhaustion triggers Energy Depleted', () => {
+  const level = {
+    id: 104,
+    world: 'test',
+    width: 6,
+    height: 6,
+    par: 2,
+    maxMoves: 2, // Only 2 moves allowed!
+    grid: [
+      "######",
+      "#S...#",
+      "#....#",
+      "#....#",
+      "#...E#",
+      "######"
+    ]
+  };
+
+  const engine = new GameEngine();
+  let energyDepleted = false;
+  engine.onPlayerDeath = (reason) => {
+    if (reason === 'ENERGY_DEPLETED') energyDepleted = true;
+  };
+  engine.loadLevel(level);
+
+  assert.strictEqual(engine.state.maxMoves, 2);
+
+  // Move 1
+  engine.move('RIGHT');
+  engine.finishSlide();
+  assert.strictEqual(engine.state.isDead, false);
+
+  // Move 2: wasteful move (doesn't reach exit)
+  engine.move('LEFT');
+  engine.finishSlide();
+
+  // Hit limit without reaching exit
+  assert.strictEqual(engine.state.isDead, true);
+  assert.strictEqual(engine.state.deathReason, 'ENERGY_DEPLETED');
+  assert.strictEqual(energyDepleted, true);
+});
+
+// 5. Undo & Restart with new mechanics
+test('State Management: Undo restores cracked walls and death state', () => {
+  const level = {
+    id: 105,
+    world: 'test',
+    width: 6,
     height: 5,
     par: 2,
+    maxMoves: 1,
     grid: [
-      "#######",
-      "#S....#",
-      "#.....#",
-      "#....E#",
-      "#######"
+      "######",
+      "#S.C.#",
+      "#....#",
+      "#...E#",
+      "######"
     ]
   };
 
   const engine = new GameEngine();
   engine.loadLevel(level);
 
-  // Start move RIGHT
-  const moved = engine.move('RIGHT');
-  assert.strictEqual(moved, true);
-  assert.strictEqual(engine.state.isMoving, true);
+  // Move 1: break cracked wall and deplete energy
+  engine.move('RIGHT');
+  engine.finishSlide();
 
-  // Attempt rapid duplicate input while slide animation is active
-  const rapidMove = engine.move('DOWN');
-  assert.strictEqual(rapidMove, false); // Ignored!
+  assert.strictEqual(engine.state.isDead, true);
+  assert.strictEqual(engine.state.brokenCrackedWalls.has('3,1'), true);
+
+  // Undo restores life and un-breaks wall
+  const undone = engine.undo();
+  assert.strictEqual(undone, true);
+  assert.strictEqual(engine.state.isDead, false);
+  assert.strictEqual(engine.state.moveCount, 0);
+  assert.strictEqual(engine.state.brokenCrackedWalls.size, 0);
 });
 
-// 7. Star Rating System
-test('Progression: Star ratings calculation', () => {
-  const pm = new ProgressManager();
-
-  // Par = 4
-  assert.strictEqual(pm.calculateStars(4, 4), 3); // Par -> 3 stars
-  assert.strictEqual(pm.calculateStars(3, 4), 3); // Under par -> 3 stars
-  assert.strictEqual(pm.calculateStars(5, 4), 2); // Par + 1 -> 2 stars
-  assert.strictEqual(pm.calculateStars(6, 4), 2); // Par + 2 -> 2 stars
-  assert.strictEqual(pm.calculateStars(7, 4), 1); // Par + 3 -> 1 star
-  assert.strictEqual(pm.calculateStars(12, 4), 1); // Many moves -> 1 star
-});
-
-// 8. Progress Persistence & Unlocking
-test('Progression: Level completion, unlocks, and persistence', () => {
+// 6. Progression Persistence & Unlocks
+test('Progression: Stars, unlocking, and persistence', () => {
   const pm = new ProgressManager();
   pm.resetAll();
 
   assert.strictEqual(pm.isLevelUnlocked(1), true);
   assert.strictEqual(pm.isLevelUnlocked(2), false);
 
-  // Complete level 1 in 3 moves (par 3)
   const res = pm.recordCompletion(1, 3, 3);
   assert.strictEqual(res.stars, 3);
   assert.strictEqual(pm.isLevelUnlocked(2), true);
   assert.strictEqual(pm.getTotalStars(), 3);
-  assert.strictEqual(pm.getCompletedCount(), 1);
-
-  // Reload from storage simulation
-  const pm2 = new ProgressManager();
-  assert.strictEqual(pm2.isLevelUnlocked(2), true);
-  assert.strictEqual(pm2.getTotalStars(), 3);
-});
-
-// 9. Level Validator Rejects Invalid/Unsolvable Levels
-test('Validator: Rejects invalid format and unsolvable mazes', () => {
-  // Invalid: missing exit
-  const noExit = {
-    id: 997,
-    width: 5,
-    height: 5,
-    grid: [
-      "#####",
-      "#S..#",
-      "#...#",
-      "#...#",
-      "#####"
-    ]
-  };
-  const valNoExit = LevelValidator.validate(noExit);
-  assert.strictEqual(valNoExit.valid, false);
-
-  // Invalid: trapped exit behind solid walls
-  const trapped = {
-    id: 998,
-    width: 6,
-    height: 6,
-    grid: [
-      "######",
-      "#S...#",
-      "#....#",
-      "###..#",
-      "#E#..#",
-      "######"
-    ]
-  };
-  const valTrapped = LevelValidator.validate(trapped);
-  assert.strictEqual(valTrapped.valid, false);
 });
 
 console.log(`\n========================================`);

@@ -7,8 +7,10 @@ export class LevelSelectUI {
     this.tabOrigin = document.getElementById('tab-world-origin');
     this.tabKeys = document.getElementById('tab-world-keys');
     this.gridContainer = document.getElementById('level-grid-container');
+    this.starTotalEl = document.getElementById('levels-star-total');
 
     this.activeWorld = 'origin';
+    this.unlockedLevelId = null;
 
     this.initEvents();
   }
@@ -30,6 +32,12 @@ export class LevelSelectUI {
     });
   }
 
+  highlightUnlock(levelId) {
+    this.unlockedLevelId = levelId;
+    const targetWorld = levelId > 30 ? 'keys' : 'origin';
+    this.setWorld(targetWorld);
+  }
+
   setWorld(worldName) {
     this.activeWorld = worldName;
     if (worldName === 'origin') {
@@ -46,22 +54,28 @@ export class LevelSelectUI {
     this.gridContainer.innerHTML = '';
     const levels = this.app.levelManager.getWorldList(this.activeWorld);
     const currentLvl = this.app.progress.getCurrentLevel();
+    const totalStars = this.app.progress.getTotalStars();
+
+    if (this.starTotalEl) {
+      this.starTotalEl.textContent = `${totalStars} ★`;
+    }
 
     levels.forEach(lvl => {
       const stats = this.app.progress.getLevelStats(lvl.id);
       const isUnlocked = this.app.progress.isLevelUnlocked(lvl.id);
       const isCurrent = lvl.id === currentLvl;
+      const isJustUnlocked = lvl.id === this.unlockedLevelId;
 
       const card = document.createElement('div');
-      card.className = `level-card ${isUnlocked ? '' : 'locked'} ${stats.completed ? 'completed' : ''} ${isCurrent ? 'current' : ''}`;
+      card.className = `level-card ${isUnlocked ? '' : 'locked'} ${stats.completed ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isJustUnlocked ? 'just-unlocked' : ''}`;
 
       if (isUnlocked) {
         card.innerHTML = `
           <span class="level-num">${lvl.id}</span>
           <div class="level-stars">
-            ${stats.stars >= 1 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
-            ${stats.stars >= 2 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
-            ${stats.stars >= 3 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
+            ${stats.stars >= 1 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
+            ${stats.stars >= 2 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
+            ${stats.stars >= 3 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
           </div>
         `;
 
@@ -80,6 +94,9 @@ export class LevelSelectUI {
 
       this.gridContainer.appendChild(card);
     });
+
+    // Reset just-unlocked highlight after rendering
+    this.unlockedLevelId = null;
   }
 
   update() {

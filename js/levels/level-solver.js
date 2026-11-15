@@ -2,39 +2,52 @@ import { DIRECTIONS, calculateSlide } from '../engine/movement.js';
 
 export class LevelSolver {
   /**
-   * Solves a level using Breadth-First Search (BFS) to find the shortest swipe sequence.
+   * Solves a level using BFS to find the shortest swipe sequence with Cores, Hazards, and Cracked Walls.
    * @param {Object} parsedLevel - Level object from LevelParser
    * @param {number} maxStates - Guard against unbounded searches
    * @returns {{ solved: boolean, moves: number, path: string[], error?: string }}
    */
-  static solve(parsedLevel, maxStates = 100000) {
+  static solve(parsedLevel, maxStates = 120000) {
     const { width, height, grid, start } = parsedLevel;
 
-    // Index all keys and doors for bitmask encoding
-    const keyCoords = [];
-    const doorCoords = [];
+    // Index all cores and cracked walls for bitmask encoding
+    const coreCoords = [];
+    const crackedCoords = [];
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        if (grid[y][x] === 'K') keyCoords.push(`${x},${y}`);
-        if (grid[y][x] === 'D') doorCoords.push(`${x},${y}`);
+        if (grid[y][x] === 'K') coreCoords.push(`${x},${y}`);
+        if (grid[y][x] === 'C') crackedCoords.push(`${x},${y}`);
       }
     }
+
+    const totalCores = coreCoords.length;
 
     const queue = [];
     const visited = new Set();
 
+    const initialCollected = parsedLevel.collectedCores ? new Set(parsedLevel.collectedCores) : new Set();
+    const initialBroken = parsedLevel.brokenCracked ? new Set(parsedLevel.brokenCracked) : new Set();
+
     const initialState = {
       x: start.x,
       y: start.y,
-      keysHeld: 0,
-      collectedSet: new Set(),
-      unlockedSet: new Set(),
+      collectedCores: initialCollected,
+      brokenCracked: initialBroken,
       path: []
     };
 
-    const initialKey = `${start.x},${start.y}|0|0`;
-    visited.add(initialKey);
+    let startCoreMask = 0;
+    coreCoords.forEach((c, idx) => {
+      if (initialCollected.has(c)) startCoreMask |= (1 << idx);
+    });
+
+    let startCrackedMask = 0;
+    crackedCoords.forEach((c, idx) => {
+      if (initialBroken.has(c)) startCrackedMask |= (1 << idx);
+    });
+
+    visited.add(`${start.x},${start.y}|${startCoreMask}|${startCrackedMask}`);
     queue.push(initialState);
 
     let statesChecked = 0;
@@ -62,18 +75,17 @@ export class LevelSolver {
           current.x,
           current.y,
           dir,
-          current.keysHeld,
-          current.collectedSet,
-          current.unlockedSet
+          totalCores,
+          current.collectedCores,
+          current.brokenCracked
         );
 
-        if (!result.moved) {
-          continue; // Blocked immediately
+        if (!result.moved || result.hitHazard) {
+          continue; // Blocked or dead on hazard
         }
 
         const newPath = [...current.path, dirKey];
 
-        // Did we reach exit?
         if (result.reachedExit) {
           return {
             solved: true,
@@ -82,34 +94,31 @@ export class LevelSolver {
           };
         }
 
-        // Construct sets for the next state
-        const nextCollected = new Set(current.collectedSet);
-        result.newlyCollectedKeys.forEach(k => nextCollected.add(k));
+        const nextCollected = new Set(current.collectedCores);
+        result.newlyCollectedCores.forEach(c => nextCollected.add(c));
 
-        const nextUnlocked = new Set(current.unlockedSet);
-        result.newlyUnlockedDoors.forEach(d => nextUnlocked.add(d));
+        const nextBroken = new Set(current.brokenCracked);
+        result.newlyBrokenCracked.forEach(c => nextBroken.add(c));
 
-        // Create bitmask hash for visited state
-        let keyMask = 0;
-        keyCoords.forEach((coord, idx) => {
-          if (nextCollected.has(coord)) keyMask |= (1 << idx);
+        let cMask = 0;
+        coreCoords.forEach((c, idx) => {
+          if (nextCollected.has(c)) cMask |= (1 << idx);
         });
 
-        let doorMask = 0;
-        doorCoords.forEach((coord, idx) => {
-          if (nextUnlocked.has(coord)) doorMask |= (1 << idx);
+        let crkMask = 0;
+        crackedCoords.forEach((c, idx) => {
+          if (nextBroken.has(c)) crkMask |= (1 << idx);
         });
 
-        const stateHash = `${result.endX},${result.endY}|${keyMask}|${doorMask}`;
+        const stateHash = `${result.endX},${result.endY}|${cMask}|${crkMask}`;
 
         if (!visited.has(stateHash)) {
           visited.add(stateHash);
           queue.push({
             x: result.endX,
             y: result.endY,
-            keysHeld: result.finalKeysHeld,
-            collectedSet: nextCollected,
-            unlockedSet: nextUnlocked,
+            collectedCores: nextCollected,
+            brokenCracked: nextBroken,
             path: newPath
           });
         }
@@ -120,7 +129,7 @@ export class LevelSolver {
       solved: false,
       moves: -1,
       path: [],
-      error: 'No solution path exists to reach the exit.'
+      error: 'No valid path found to activate cores and reach exit.'
     };
   }
 }

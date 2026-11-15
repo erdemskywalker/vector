@@ -21,13 +21,16 @@ export class CanvasRenderer {
       borderGrid: '#252C3A',
       wall: '#1E2536',
       wallHighlight: '#2A344A',
+      crackedWall: '#232B3D',
+      crackedLines: '#73D7FF',
+      hazardBg: 'rgba(251, 113, 133, 0.12)',
+      hazardBorder: '#FB7185',
       cubeStart: '#73D7FF',
       cubeEnd: '#A78BFA',
-      exit: '#86EFAC',
-      exitGlow: 'rgba(134, 239, 172, 0.4)',
-      key: '#FDE047',
-      door: '#F59E0B',
-      doorLockedBorder: '#FB7185'
+      exitActive: '#86EFAC',
+      exitInactive: '#333C4E',
+      core: '#73D7FF',
+      coreInner: '#FDE047'
     };
 
     window.addEventListener('resize', () => this.resize());
@@ -56,15 +59,14 @@ export class CanvasRenderer {
       this.resize();
     }
 
-    const padding = 24;
+    const padding = 20;
     const availWidth = this.viewWidth - padding * 2;
     const availHeight = this.viewHeight - padding * 2;
 
     const sizeX = Math.floor(availWidth / gridWidth);
     const sizeY = Math.floor(availHeight / gridHeight);
 
-    // Keep square cells, maximum limit for visual balance
-    this.cellSize = Math.min(sizeX, sizeY, 68);
+    this.cellSize = Math.min(sizeX, sizeY, 64);
 
     const boardWidth = this.cellSize * gridWidth;
     const boardHeight = this.cellSize * gridHeight;
@@ -83,17 +85,15 @@ export class CanvasRenderer {
     const width = this.viewWidth;
     const height = this.viewHeight;
 
-    // Clear entire frame
     ctx.clearRect(0, 0, width, height);
 
     ctx.save();
-    // Apply camera shake if active
     ctx.translate(this.effects.shakeOffsetX, this.effects.shakeOffsetY);
 
-    // 1. Draw Grid Outer Card / Background
+    // 1. Grid Background Card
     const boardW = gameState.width * this.cellSize;
     const boardH = gameState.height * this.cellSize;
-    const cornerRadius = 16;
+    const cornerRadius = 14;
 
     ctx.save();
     ctx.fillStyle = this.colors.bgGrid;
@@ -105,7 +105,7 @@ export class CanvasRenderer {
     ctx.stroke();
     ctx.restore();
 
-    // 2. Draw Cells & Walls
+    // 2. Grid Cells
     for (let y = 0; y < gameState.height; y++) {
       for (let x = 0; x < gameState.width; x++) {
         const cellX = this.originX + x * this.cellSize;
@@ -117,13 +117,16 @@ export class CanvasRenderer {
       }
     }
 
-    // 3. Render Visual Trails
+    // 3. Shockwaves & Trails
+    this.effects.renderShockwaves(ctx);
     this.effects.renderTrails(ctx);
 
-    // 4. Render Player Cube
-    this.drawPlayerCube(ctx, gameState, dt);
+    // 4. Player Cube (if not destroyed)
+    if (!gameState.isDead) {
+      this.drawPlayerCube(ctx, gameState, dt);
+    }
 
-    // 5. Render Particle Bursts
+    // 5. Particles
     this.effects.renderParticles(ctx);
 
     ctx.restore();
@@ -131,128 +134,169 @@ export class CanvasRenderer {
 
   drawCell(ctx, tile, coord, cellX, cellY, gameState) {
     const size = this.cellSize;
-    const innerPadding = 2;
+    const p = 2;
 
-    // Empty cell grid line
-    ctx.strokeStyle = 'rgba(37, 44, 58, 0.4)';
+    // Grid wireframe
+    ctx.strokeStyle = 'rgba(37, 44, 58, 0.45)';
     ctx.lineWidth = 1;
     ctx.strokeRect(cellX, cellY, size, size);
 
     if (tile === TILE_TYPES.WALL) {
-      // Premium Beveled Wall
+      // Solid Wall
       ctx.save();
       ctx.fillStyle = this.colors.wall;
       ctx.beginPath();
-      ctx.roundRect(cellX + innerPadding, cellY + innerPadding, size - innerPadding * 2, size - innerPadding * 2, 6);
+      ctx.roundRect(cellX + p, cellY + p, size - p * 2, size - p * 2, 6);
       ctx.fill();
 
-      // Top edge highlight for 3D depth
       ctx.strokeStyle = this.colors.wallHighlight;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(cellX + innerPadding + 4, cellY + innerPadding + 1);
-      ctx.lineTo(cellX + size - innerPadding - 4, cellY + innerPadding + 1);
+      ctx.moveTo(cellX + p + 3, cellY + p + 1);
+      ctx.lineTo(cellX + size - p - 3, cellY + p + 1);
       ctx.stroke();
       ctx.restore();
+    } else if (tile === TILE_TYPES.CRACKED) {
+      // Cracked Wall
+      const isBroken = gameState.brokenCrackedWalls.has(coord);
+      ctx.save();
+      if (isBroken) {
+        // Broken rubble imprint
+        ctx.fillStyle = 'rgba(23, 28, 39, 0.4)';
+        ctx.strokeStyle = 'rgba(115, 215, 255, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(cellX + p, cellY + p, size - p * 2, size - p * 2, 4);
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        // Solid with fracture lines
+        ctx.fillStyle = this.colors.crackedWall;
+        ctx.beginPath();
+        ctx.roundRect(cellX + p, cellY + p, size - p * 2, size - p * 2, 6);
+        ctx.fill();
+
+        // Fracture neon lines
+        ctx.strokeStyle = 'rgba(115, 215, 255, 0.55)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cellX + size * 0.3, cellY + p + 2);
+        ctx.lineTo(cellX + size * 0.5, cellY + size * 0.5);
+        ctx.lineTo(cellX + size * 0.4, cellY + size * 0.8);
+        ctx.lineTo(cellX + size * 0.7, cellY + size - p - 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    } else if (tile === TILE_TYPES.HAZARD) {
+      // Deadly Hazard Laser Plate
+      ctx.save();
+      const pulse = 0.7 + Math.sin(this.pulseTime * 6) * 0.3;
+      ctx.fillStyle = this.colors.hazardBg;
+      ctx.strokeStyle = `rgba(251, 113, 133, ${pulse})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(cellX + p, cellY + p, size - p * 2, size - p * 2, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // Danger Cross
+      const cx = cellX + size / 2;
+      const cy = cellY + size / 2;
+      const r = size * 0.22;
+      ctx.strokeStyle = '#FB7185';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx - r, cy - r);
+      ctx.lineTo(cx + r, cy + r);
+      ctx.moveTo(cx + r, cy - r);
+      ctx.lineTo(cx - r, cy + r);
+      ctx.stroke();
+      ctx.restore();
+    } else if (tile === TILE_TYPES.CORE) {
+      // Energy Core
+      if (!gameState.collectedCores.has(coord)) {
+        this.drawCore(ctx, cellX, cellY, size);
+      }
     } else if (tile === TILE_TYPES.EXIT) {
       // Exit Portal
-      this.drawExit(ctx, cellX, cellY, size);
-    } else if (tile === TILE_TYPES.KEY) {
-      if (!gameState.collectedKeys.has(coord)) {
-        this.drawKey(ctx, cellX, cellY, size);
-      }
-    } else if (tile === TILE_TYPES.DOOR) {
-      const isUnlocked = gameState.unlockedDoors.has(coord);
-      this.drawDoor(ctx, cellX, cellY, size, isUnlocked);
+      this.drawExit(ctx, cellX, cellY, size, gameState.isPortalActive());
     }
   }
 
-  drawExit(ctx, cellX, cellY, size) {
+  drawCore(ctx, cellX, cellY, size) {
     const cx = cellX + size / 2;
     const cy = cellY + size / 2;
-    const pulse = 1 + Math.sin(this.pulseTime * 4) * 0.08;
-    const radius = (size * 0.32) * pulse;
+    const pulse = 1 + Math.sin(this.pulseTime * 5) * 0.1;
+    const r = (size * 0.26) * pulse;
 
     ctx.save();
-    // Outer Glow Ring
-    ctx.shadowColor = this.colors.exit;
-    ctx.shadowBlur = 14;
-    ctx.strokeStyle = this.colors.exit;
-    ctx.lineWidth = 2.5;
+    ctx.shadowColor = this.colors.core;
+    ctx.shadowBlur = 12;
 
+    // Outer Aura Ring
+    ctx.strokeStyle = 'rgba(115, 215, 255, 0.4)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r * 1.3, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Inner Portal Diamond
-    ctx.fillStyle = 'rgba(134, 239, 172, 0.25)';
+    // Floating Diamond Core
+    ctx.fillStyle = this.colors.core;
     ctx.beginPath();
-    ctx.roundRect(cx - radius * 0.5, cy - radius * 0.5, radius, radius, 4);
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  drawKey(ctx, cellX, cellY, size) {
-    const cx = cellX + size / 2;
-    const cy = cellY + size / 2;
-    const pulse = 1 + Math.sin(this.pulseTime * 5) * 0.06;
-    const keySize = (size * 0.28) * pulse;
-
-    ctx.save();
-    ctx.shadowColor = this.colors.key;
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = this.colors.key;
-
-    // Glowing Diamond Key
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - keySize);
-    ctx.lineTo(cx + keySize, cy);
-    ctx.lineTo(cx, cy + keySize);
-    ctx.lineTo(cx - keySize, cy);
+    ctx.moveTo(cx, cy - r);
+    ctx.lineTo(cx + r, cy);
+    ctx.lineTo(cx, cy + r);
+    ctx.lineTo(cx - r, cy);
     ctx.closePath();
     ctx.fill();
 
+    // Inner bright center
+    ctx.fillStyle = this.colors.coreInner;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
   }
 
-  drawDoor(ctx, cellX, cellY, size, isUnlocked) {
-    const p = 3;
-    const w = size - p * 2;
-    const h = size - p * 2;
+  drawExit(ctx, cellX, cellY, size, isActive) {
+    const cx = cellX + size / 2;
+    const cy = cellY + size / 2;
 
     ctx.save();
-    if (isUnlocked) {
-      // Open / Unlocked Door (Recessed Floor)
-      ctx.fillStyle = 'rgba(23, 28, 39, 0.5)';
-      ctx.strokeStyle = 'rgba(134, 239, 172, 0.4)';
-      ctx.lineWidth = 1.5;
+    if (isActive) {
+      // Active Radiant Exit Portal
+      const pulse = 1 + Math.sin(this.pulseTime * 4.5) * 0.08;
+      const radius = (size * 0.34) * pulse;
+
+      ctx.shadowColor = this.colors.exitActive;
+      ctx.shadowBlur = 16;
+      ctx.strokeStyle = this.colors.exitActive;
+      ctx.lineWidth = 2.5;
+
       ctx.beginPath();
-      ctx.roundRect(cellX + p, cellY + p, w, h, 6);
-      ctx.fill();
-      ctx.stroke();
-    } else {
-      // Locked Door Barrier
-      ctx.fillStyle = '#2A1B1D';
-      ctx.strokeStyle = this.colors.doorLockedBorder;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(cellX + p, cellY + p, w, h, 6);
-      ctx.fill();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Lock Icon Motif
-      const cx = cellX + size / 2;
-      const cy = cellY + size / 2;
-      ctx.fillStyle = this.colors.door;
+      // Spinning inner diamond
+      ctx.fillStyle = 'rgba(134, 239, 172, 0.3)';
       ctx.beginPath();
-      ctx.roundRect(cx - 5, cy - 2, 10, 8, 2);
+      ctx.roundRect(cx - radius * 0.5, cy - radius * 0.5, radius, radius, 4);
       ctx.fill();
-      ctx.strokeStyle = this.colors.door;
-      ctx.lineWidth = 2;
+    } else {
+      // Inactive / Sleeping Portal
+      const radius = size * 0.3;
+      ctx.strokeStyle = this.colors.exitInactive;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(cx, cy - 3, 4, Math.PI, 0);
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
+
+      // Central Lock Icon / Dot
+      ctx.fillStyle = this.colors.exitInactive;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
   }
@@ -264,7 +308,6 @@ export class CanvasRenderer {
     const cubeSize = this.cellSize - padding * 2;
     const corner = cubeSize * 0.22;
 
-    // Emit trail when moving
     if (gameState.isMoving) {
       this.trailTimer += dt;
       if (this.trailTimer > 0.02) {
@@ -274,11 +317,9 @@ export class CanvasRenderer {
     }
 
     ctx.save();
-    // Soft outer neon glow
     ctx.shadowColor = this.colors.cubeStart;
     ctx.shadowBlur = 14;
 
-    // Cube Gradient
     const gradient = ctx.createLinearGradient(
       px + padding,
       py + padding,
@@ -293,7 +334,6 @@ export class CanvasRenderer {
     ctx.roundRect(px + padding, py + padding, cubeSize, cubeSize, corner);
     ctx.fill();
 
-    // Subtle inner bevel/highlight
     ctx.shadowBlur = 0;
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.lineWidth = 1.5;

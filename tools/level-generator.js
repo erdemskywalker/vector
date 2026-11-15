@@ -6,147 +6,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
-const DIRS = [
-  { name: 'UP', x: 0, y: -1 },
-  { name: 'RIGHT', x: 1, y: 0 },
-  { name: 'DOWN', x: 0, y: 1 },
-  { name: 'LEFT', x: -1, y: 0 }
-];
+// Import Solver
+import { LevelSolver } from '../js/levels/level-solver.js';
 
-function solveLevel(grid) {
-  const height = grid.length;
-  const width = grid[0].length;
-
-  let start = null;
-  let exit = null;
-  const keys = [];
-  const doors = [];
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const char = grid[y][x];
-      if (char === 'S') start = { x, y };
-      if (char === 'E') exit = { x, y };
-      if (char === 'K') keys.push(`${x},${y}`);
-      if (char === 'D') doors.push(`${x},${y}`);
-    }
-  }
-
-  if (!start || !exit) return null;
-
-  const queue = [{
-    x: start.x,
-    y: start.y,
-    keysHeld: 0,
-    collected: new Set(),
-    unlocked: new Set(),
-    path: []
-  }];
-
-  const visited = new Set();
-  visited.add(`${start.x},${start.y}|0|0`);
-
-  let iterations = 0;
-  while (queue.length > 0) {
-    iterations++;
-    if (iterations > 80000) break;
-
-    const cur = queue.shift();
-
-    for (const dir of DIRS) {
-      let x = cur.x;
-      let y = cur.y;
-      let keysHeld = cur.keysHeld;
-      const newlyCollected = [];
-      const newlyUnlocked = [];
-      let reachedExit = false;
-      let steps = 0;
-
-      while (true) {
-        const nx = x + dir.x;
-        const ny = y + dir.y;
-
-        if (nx < 0 || nx >= width || ny < 0 || ny >= height) break;
-        const tile = grid[ny][nx];
-        if (tile === '#') break;
-
-        const coord = `${nx},${ny}`;
-        if (tile === 'D') {
-          const isUnlocked = cur.unlocked.has(coord) || newlyUnlocked.includes(coord);
-          if (!isUnlocked) {
-            if (keysHeld > 0) {
-              keysHeld--;
-              newlyUnlocked.push(coord);
-            } else {
-              break; // blocked
-            }
-          }
-        }
-
-        x = nx;
-        y = ny;
-        steps++;
-
-        if (tile === 'K') {
-          const isCollected = cur.collected.has(coord) || newlyCollected.includes(coord);
-          if (!isCollected) {
-            keysHeld++;
-            newlyCollected.push(coord);
-          }
-        }
-
-        if (tile === 'E') {
-          reachedExit = true;
-          break;
-        }
-      }
-
-      if (steps > 0) {
-        const newPath = [...cur.path, dir.name];
-        if (reachedExit) {
-          return {
-            solved: true,
-            moves: newPath.length,
-            path: newPath
-          };
-        }
-
-        const nextCollected = new Set(cur.collected);
-        newlyCollected.forEach(k => nextCollected.add(k));
-
-        const nextUnlocked = new Set(cur.unlocked);
-        newlyUnlocked.forEach(d => nextUnlocked.add(d));
-
-        let kMask = 0;
-        keys.forEach((k, idx) => {
-          if (nextCollected.has(k)) kMask |= (1 << idx);
-        });
-
-        let dMask = 0;
-        doors.forEach((d, idx) => {
-          if (nextUnlocked.has(d)) dMask |= (1 << idx);
-        });
-
-        const stateHash = `${x},${y}|${kMask}|${dMask}`;
-        if (!visited.has(stateHash)) {
-          visited.add(stateHash);
-          queue.push({
-            x,
-            y,
-            keysHeld,
-            collected: nextCollected,
-            unlocked: nextUnlocked,
-            path: newPath
-          });
-        }
-      }
-    }
-  }
-
-  return null;
-}
-
-// Pseudo-random number generator with seed
 function Mulberry32(seed) {
   return function() {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
@@ -156,11 +18,22 @@ function Mulberry32(seed) {
   };
 }
 
-function generateVerifiedLevel(id, world, name, width, height, minTargetPar, maxTargetPar, hasKeys = false, numKeys = 1, seed = 12345) {
-  const rng = Mulberry32(seed + id * 100);
+function generateVerifiedLevel(
+  id,
+  world,
+  name,
+  width,
+  height,
+  minTargetPar,
+  maxTargetPar,
+  config = {},
+  seed = 50000
+) {
+  const { numCores = 0, numCracked = 0, numHazards = 0, maxMoves = null } = config;
+  const rng = Mulberry32(seed + id * 137);
 
-  for (let attempt = 0; attempt < 3000; attempt++) {
-    // 1. Create clean grid with border walls
+  for (let attempt = 0; attempt < 5000; attempt++) {
+    // 1. Create boundary grid
     const grid = [];
     for (let y = 0; y < height; y++) {
       const row = [];
@@ -174,15 +47,30 @@ function generateVerifiedLevel(id, world, name, width, height, minTargetPar, max
       grid.push(row);
     }
 
-    // 2. Add random interior walls
-    const innerWallsCount = Math.floor(width * height * (0.16 + rng() * 0.12));
+    // 2. Interior Walls
+    const wallDensity = 0.15 + rng() * 0.12;
+    const innerWallsCount = Math.floor(width * height * wallDensity);
     for (let i = 0; i < innerWallsCount; i++) {
       const wx = 1 + Math.floor(rng() * (width - 2));
       const wy = 1 + Math.floor(rng() * (height - 2));
       grid[wy][wx] = '#';
     }
 
-    // 3. Find open cells for Start, Exit, Keys, Doors
+    // 3. Cracked Walls (C)
+    for (let i = 0; i < numCracked; i++) {
+      const cx = 1 + Math.floor(rng() * (width - 2));
+      const cy = 1 + Math.floor(rng() * (height - 2));
+      if (grid[cy][cx] === '.') grid[cy][cx] = 'C';
+    }
+
+    // 4. Hazards (X)
+    for (let i = 0; i < numHazards; i++) {
+      const hx = 1 + Math.floor(rng() * (width - 2));
+      const hy = 1 + Math.floor(rng() * (height - 2));
+      if (grid[hy][hx] === '.') grid[hy][hx] = 'X';
+    }
+
+    // 5. Open Cells for Start, Exit, Cores
     const openCells = [];
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
@@ -192,14 +80,14 @@ function generateVerifiedLevel(id, world, name, width, height, minTargetPar, max
       }
     }
 
-    if (openCells.length < 10) continue;
+    if (openCells.length < 5 + numCores) continue;
 
-    // Pick Start
+    // Place Start
     const sIdx = Math.floor(rng() * openCells.length);
     const start = openCells.splice(sIdx, 1)[0];
     grid[start.y][start.x] = 'S';
 
-    // Pick Exit (far from start)
+    // Place Exit (distance maximized)
     let bestExitIdx = -1;
     let maxDist = -1;
     for (let i = 0; i < openCells.length; i++) {
@@ -212,31 +100,30 @@ function generateVerifiedLevel(id, world, name, width, height, minTargetPar, max
     const exit = openCells.splice(bestExitIdx, 1)[0];
     grid[exit.y][exit.x] = 'E';
 
-    // World 2: Keys and Doors
-    if (hasKeys) {
-      const keysPlaced = [];
-      for (let k = 0; k < numKeys; k++) {
-        if (openCells.length === 0) break;
-        const kIdx = Math.floor(rng() * openCells.length);
-        const kCell = openCells.splice(kIdx, 1)[0];
-        grid[kCell.y][kCell.x] = 'K';
-        keysPlaced.push(kCell);
-      }
-
-      for (let d = 0; d < numKeys; d++) {
-        if (openCells.length === 0) break;
-        // Prefer placing door near exit or middle
-        const dIdx = Math.floor(rng() * openCells.length);
-        const dCell = openCells.splice(dIdx, 1)[0];
-        grid[dCell.y][dCell.x] = 'D';
-      }
+    // Place Energy Cores (K)
+    for (let k = 0; k < numCores; k++) {
+      if (openCells.length === 0) break;
+      const kIdx = Math.floor(rng() * openCells.length);
+      const kCell = openCells.splice(kIdx, 1)[0];
+      grid[kCell.y][kCell.x] = 'K';
     }
 
     const gridStrings = grid.map(r => r.join(''));
-    const sol = solveLevel(gridStrings);
+    const parsed = {
+      width,
+      height,
+      grid: gridStrings,
+      start,
+      exit
+    };
+
+    const sol = LevelSolver.solve(parsed);
 
     if (sol && sol.solved) {
       if (sol.moves >= minTargetPar && sol.moves <= maxTargetPar) {
+        // If maxMoves is specified, ensure sol.moves <= maxMoves
+        if (maxMoves !== null && sol.moves > maxMoves) continue;
+
         return {
           id,
           world,
@@ -244,6 +131,7 @@ function generateVerifiedLevel(id, world, name, width, height, minTargetPar, max
           width,
           height,
           par: sol.moves,
+          maxMoves: maxMoves,
           grid: gridStrings,
           solution: sol
         };
@@ -251,26 +139,25 @@ function generateVerifiedLevel(id, world, name, width, height, minTargetPar, max
     }
   }
 
-  // Fallback template if procedural loop didn't find within range
-  throw new Error(`Failed to generate level ${id} with target par ${minTargetPar}-${maxTargetPar}`);
+  throw new Error(`Failed to generate valid level ${id} with target par ${minTargetPar}-${maxTargetPar}`);
 }
 
 const WORLD1_NAMES = [
   "First Steps", "The Turn", "Corridor", "Pivot", "Crossroad",
-  "Angle", "Zigzag", "Deflection", "Rebound", "Square Loop",
-  "Orbit", "Precision", "The Blockade", "Reflex", "Echo",
-  "Diamond", "Shift", "Labyrinth", "Pinball", "Pulse",
-  "Symmetry", "Kinetic", "Centrifuge", "Vector Shift", "Gridlock",
-  "Paradox", "Quantum", "Continuum", "Vortex", "The Citadel"
+  "Fracture I", "Fracture II", "Deflection", "Rebound", "Square Loop",
+  "Laser Hazard", "Grid Matrix", "The Blockade", "Reflex", "Echo",
+  "Diamond Core", "Shift", "Labyrinth", "Pinball", "Pulse Hazard",
+  "Symmetry", "Kinetic Shock", "Centrifuge", "Vector Shift", "Gridlock",
+  "Paradox", "Quantum Trap", "Continuum", "Vortex", "The Citadel"
 ];
 
 const WORLD2_NAMES = [
-  "First Lock", "The Barrier", "Keyhole", "Cipher", "Access Port",
-  "Vault", "Detour", "Checkpoint", "Perimeter", "Iron Gate",
-  "Redirection", "Key Ring", "Infiltration", "Firewall", "Deadbolt",
-  "Twin Lock", "Binary Gate", "Dual Core", "Bastion", "Sanction",
-  "Cryptography", "Sequencer", "Overload", "Fortress", "Obsidian",
-  "Matrix", "Singularity", "Enigma", "Apex", "Vector Prime"
+  "Core Activation", "Dual Resonance", "Keyhole Matrix", "Cipher Core", "Access Port",
+  "Vault Lock", "Detour", "Checkpoint X", "Perimeter", "Iron Hazard",
+  "Redirection", "Core Ring", "Infiltration", "Firewall X", "Deadbolt",
+  "Twin Core Alpha", "Binary Hazard", "Dual Core Beta", "Bastion", "Sanction",
+  "Cryptography", "Sequencer", "Overload Trap", "Fortress", "Obsidian Core",
+  "Matrix Hazard", "Singularity", "Enigma Gate", "Apex Vector", "Vector Prime"
 ];
 
 function generateAllLevels() {
@@ -286,23 +173,42 @@ function generateAllLevels() {
   for (let i = 0; i < 30; i++) {
     const id = i + 1;
     const name = WORLD1_NAMES[i];
-    let w = 7;
-    let h = 7;
-    let minPar = 3;
-    let maxPar = 4;
+    let w = 7, h = 7;
+    let minPar = 3, maxPar = 4;
+    let config = { numCores: 0, numCracked: 0, numHazards: 0, maxMoves: null };
 
     if (id <= 5) {
+      // 1-5: Introductory, no limits, pure sliding
       w = 6; h = 6; minPar = 2; maxPar = 3;
-    } else if (id <= 15) {
+    } else if (id <= 10) {
+      // 6-10: Introduce Cracked Wall, no limits
+      w = 7; h = 7; minPar = 3; maxPar = 4;
+      config.numCracked = 1;
+    } else if (id <= 20) {
+      // 11-20: Introduce Hazard laser (X), dynamic limit (par + 4)
       w = 7; h = 7; minPar = 4; maxPar = 5;
-    } else if (id <= 25) {
-      w = 8; h = 8; minPar = 5; maxPar = 7;
+      config.numCracked = 1;
+      config.numHazards = 1;
+      config.maxMoves = minPar + 4; // Will adjust after par known
     } else {
-      w = 9; h = 9; minPar = 6; maxPar = 8;
+      // 21-30: Advanced labyrinth with Cracked walls, hazards, tighter limit (par + 3)
+      w = 8; h = 8; minPar = 5; maxPar = 7;
+      config.numCracked = 2;
+      config.numHazards = 2;
     }
 
-    const level = generateVerifiedLevel(id, 'origin', name, w, h, minPar, maxPar, false, 0, 42000 + id * 37);
-    console.log(`[World 1] Level ${String(id).padStart(2, '0')} "${name}": Par ${level.par} (${level.solution.path.join('->')})`);
+    const level = generateVerifiedLevel(id, 'origin', name, w, h, minPar, maxPar, config, 10000 + id * 53);
+
+    // Compute exact dynamic maxMoves
+    if (id <= 10) {
+      level.maxMoves = null;
+    } else if (id <= 20) {
+      level.maxMoves = level.par + 4;
+    } else {
+      level.maxMoves = level.par + 3;
+    }
+
+    console.log(`[World 1] Level ${String(id).padStart(2, '0')} "${name}": Par ${level.par} | MaxMoves: ${level.maxMoves || '∞'} (${level.solution.path.join('->')})`);
 
     const jsonPath = path.join(originDir, `level-${String(id).padStart(3, '0')}.json`);
     const fileObj = {
@@ -312,32 +218,50 @@ function generateAllLevels() {
       width: level.width,
       height: level.height,
       par: level.par,
+      maxMoves: level.maxMoves,
       grid: level.grid
     };
     fs.writeFileSync(jsonPath, JSON.stringify(fileObj, null, 2));
     allLevelsBundle.push(fileObj);
   }
 
-  console.log('\n=== GENERATING WORLD 02: KEYS (Levels 31 to 60) ===');
+  console.log('\n=== GENERATING WORLD 02: CORES (Levels 31 to 60) ===');
   for (let i = 0; i < 30; i++) {
     const id = 31 + i;
     const name = WORLD2_NAMES[i];
-    let w = 8;
-    let h = 8;
-    let numKeys = 1;
-    let minPar = 4;
-    let maxPar = 6;
+    let w = 8, h = 8;
+    let minPar = 4, maxPar = 6;
+    let config = { numCores: 1, numCracked: 1, numHazards: 1, maxMoves: null };
 
     if (id <= 45) {
-      w = 8; h = 8; numKeys = 1; minPar = 4; maxPar = 6;
+      // 31-45: 1 Core, 1 Hazard, 1 Cracked wall, maxMoves = par + 3
+      w = 8; h = 8; minPar = 4; maxPar = 6;
+      config.numCores = 1;
+      config.numHazards = 1;
+      config.numCracked = 1;
     } else if (id <= 55) {
-      w = 9; h = 9; numKeys = 1; minPar = 5; maxPar = 7;
+      // 46-55: 2 Cores, 2 Hazards, 2 Cracked walls, maxMoves = par + 3
+      w = 9; h = 9; minPar = 5; maxPar = 7;
+      config.numCores = 2;
+      config.numHazards = 2;
+      config.numCracked = 2;
     } else {
-      w = 9; h = 9; numKeys = 2; minPar = 6; maxPar = 9;
+      // 56-60: Grand Finale, 2-3 Cores, tight maxMoves = par + 2
+      w = 9; h = 9; minPar = 6; maxPar = 8;
+      config.numCores = 2;
+      config.numHazards = 2;
+      config.numCracked = 2;
     }
 
-    const level = generateVerifiedLevel(id, 'keys', name, w, h, minPar, maxPar, true, numKeys, 88000 + id * 43);
-    console.log(`[World 2] Level ${String(id).padStart(2, '0')} "${name}": Par ${level.par} (${level.solution.path.join('->')})`);
+    const level = generateVerifiedLevel(id, 'keys', name, w, h, minPar, maxPar, config, 60000 + id * 61);
+
+    if (id <= 55) {
+      level.maxMoves = level.par + 3;
+    } else {
+      level.maxMoves = level.par + 2;
+    }
+
+    console.log(`[World 2] Level ${String(id).padStart(2, '0')} "${name}": Par ${level.par} | MaxMoves: ${level.maxMoves} (${level.solution.path.join('->')})`);
 
     const jsonPath = path.join(keysDir, `level-${String(id).padStart(3, '0')}.json`);
     const fileObj = {
@@ -347,13 +271,14 @@ function generateAllLevels() {
       width: level.width,
       height: level.height,
       par: level.par,
+      maxMoves: level.maxMoves,
       grid: level.grid
     };
     fs.writeFileSync(jsonPath, JSON.stringify(fileObj, null, 2));
     allLevelsBundle.push(fileObj);
   }
 
-  // Bundle file
+  // Pre-compiled bundle
   const bundlePath = path.join(rootDir, 'js', 'levels', 'level-data.js');
   const bundleContent = `/**
  * Pre-compiled & Validated 60 Levels Bundle for 100% Offline / WebView / Browser Support
@@ -361,7 +286,7 @@ function generateAllLevels() {
 export const BUNDLED_LEVELS = ${JSON.stringify(allLevelsBundle, null, 2)};
 `;
   fs.writeFileSync(bundlePath, bundleContent);
-  console.log(`\nAll 60 levels successfully generated, 100% BFS-verified, and saved!`);
+  console.log(`\nSuccessfully generated, BFS-verified, and saved all 60 levels!`);
 }
 
 generateAllLevels();

@@ -15,7 +15,6 @@ export class LevelParser {
     const height = data.grid.length;
     const width = data.grid[0].length;
 
-    // Check row lengths
     for (let r = 0; r < height; r++) {
       if (data.grid[r].length !== width) {
         throw new Error(`Inconsistent row length at row ${r}`);
@@ -26,8 +25,9 @@ export class LevelParser {
     let exitCount = 0;
     let startPos = null;
     let exitPos = null;
-    const keys = [];
-    const doors = [];
+    const cores = [];
+    const cracked = [];
+    const hazards = [];
 
     const allowed = new Set(Object.values(TILE_TYPES));
 
@@ -44,10 +44,12 @@ export class LevelParser {
         } else if (char === TILE_TYPES.EXIT) {
           exitCount++;
           exitPos = { x, y };
-        } else if (char === TILE_TYPES.KEY) {
-          keys.push({ x, y });
-        } else if (char === TILE_TYPES.DOOR) {
-          doors.push({ x, y });
+        } else if (char === TILE_TYPES.CORE) {
+          cores.push({ x, y });
+        } else if (char === TILE_TYPES.CRACKED) {
+          cracked.push({ x, y });
+        } else if (char === TILE_TYPES.HAZARD) {
+          hazards.push({ x, y });
         }
       }
     }
@@ -66,11 +68,13 @@ export class LevelParser {
       width: width,
       height: height,
       par: data.par || 4,
+      maxMoves: data.maxMoves !== undefined ? data.maxMoves : null,
       grid: data.grid,
       start: startPos,
       exit: exitPos,
-      keys: keys,
-      doors: doors
+      cores: cores,
+      cracked: cracked,
+      hazards: hazards
     };
   }
 }

@@ -6,12 +6,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
-// Import Solver & Parser
 import { LevelParser } from '../js/levels/level-parser.js';
 import { LevelSolver } from '../js/levels/level-solver.js';
 
 function validateAll() {
-  console.log('=== VECTOR LEVEL INTEGRITY VALIDATOR ===\n');
+  console.log('=== VECTOR 2.0 LEVEL INTEGRITY VALIDATOR ===\n');
 
   const worlds = ['origin', 'keys'];
   let totalChecked = 0;
@@ -44,7 +43,8 @@ function validateAll() {
           if (parsed.par !== solution.moves) {
             console.warn(`[WARN] ${w}/${f}: Par mismatch! Declared: ${parsed.par}, Optimal: ${solution.moves}`);
           } else {
-            console.log(`[PASS] ${w}/${f} (ID ${parsed.id} "${parsed.name}"): Solvable in ${solution.moves} moves (${solution.path.join('->')})`);
+            const maxStr = parsed.maxMoves !== null ? `Max: ${parsed.maxMoves}` : 'Max: ∞';
+            console.log(`[PASS] ${w}/${f} (ID ${parsed.id} "${parsed.name}"): Par ${solution.moves} | ${maxStr} (${solution.path.join('->')})`);
           }
         }
       } catch (err) {

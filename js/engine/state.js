@@ -10,23 +10,45 @@ export class GameState {
     this.grid = levelData.grid;
     this.par = levelData.par || 1;
 
-    // Find start and exit if not provided explicitly
-    this.start = levelData.start || this.findTile('S');
-    this.exit = levelData.exit || this.findTile('E');
+    // Find start and exit
+    this.start = levelData.start || this.findTile('S') || { x: 1, y: 1 };
+    this.exit = levelData.exit || this.findTile('E') || { x: this.width - 2, y: this.height - 2 };
 
     // Logical state
-    this.playerX = this.start ? this.start.x : 0;
-    this.playerY = this.start ? this.start.y : 0;
+    this.playerX = this.start.x;
+    this.playerY = this.start.y;
 
-    // Visual animated state
+    // Visual animated position
     this.visualX = this.playerX;
     this.visualY = this.playerY;
 
-    this.keysHeld = 0;
-    this.collectedKeys = new Set();
-    this.unlockedDoors = new Set();
+    // Count Energy Cores
+    this.totalCores = 0;
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        if (this.grid[y][x] === 'K') this.totalCores++;
+      }
+    }
+
+    // Dynamic Max Moves calculation
+    if (levelData.maxMoves !== undefined) {
+      this.maxMoves = levelData.maxMoves;
+    } else if (levelData.id <= 10) {
+      this.maxMoves = null; // Unlimited for introductory levels 1-10
+    } else if (levelData.id <= 20) {
+      this.maxMoves = this.par + 4;
+    } else if (levelData.id <= 40) {
+      this.maxMoves = this.par + 3;
+    } else {
+      this.maxMoves = this.par + 2; // Tighter limit for late-game worlds
+    }
+
+    this.collectedCores = new Set();
+    this.brokenCrackedWalls = new Set();
     this.moveCount = 0;
     this.isCompleted = false;
+    this.isDead = false;
+    this.deathReason = null;
     this.isMoving = false;
 
     // Undo History Stack
@@ -44,14 +66,24 @@ export class GameState {
     return null;
   }
 
+  isPortalActive() {
+    return this.collectedCores.size >= this.totalCores;
+  }
+
+  getMovesRemaining() {
+    if (this.maxMoves === null) return null;
+    return Math.max(0, this.maxMoves - this.moveCount);
+  }
+
   saveSnapshot() {
     this.history.push({
       playerX: this.playerX,
       playerY: this.playerY,
-      keysHeld: this.keysHeld,
-      collectedKeys: new Set(this.collectedKeys),
-      unlockedDoors: new Set(this.unlockedDoors),
-      moveCount: this.moveCount
+      collectedCores: new Set(this.collectedCores),
+      brokenCrackedWalls: new Set(this.brokenCrackedWalls),
+      moveCount: this.moveCount,
+      isDead: this.isDead,
+      deathReason: this.deathReason
     });
   }
 
@@ -65,10 +97,11 @@ export class GameState {
     this.playerY = snapshot.playerY;
     this.visualX = snapshot.playerX;
     this.visualY = snapshot.playerY;
-    this.keysHeld = snapshot.keysHeld;
-    this.collectedKeys = snapshot.collectedKeys;
-    this.unlockedDoors = snapshot.unlockedDoors;
+    this.collectedCores = snapshot.collectedCores;
+    this.brokenCrackedWalls = snapshot.brokenCrackedWalls;
     this.moveCount = snapshot.moveCount;
+    this.isDead = snapshot.isDead;
+    this.deathReason = snapshot.deathReason;
     this.isCompleted = false;
 
     return true;
@@ -81,11 +114,12 @@ export class GameState {
     this.playerY = this.start.y;
     this.visualX = this.start.x;
     this.visualY = this.start.y;
-    this.keysHeld = 0;
-    this.collectedKeys.clear();
-    this.unlockedDoors.clear();
+    this.collectedCores.clear();
+    this.brokenCrackedWalls.clear();
     this.moveCount = 0;
     this.isCompleted = false;
+    this.isDead = false;
+    this.deathReason = null;
     this.history = [];
 
     return true;
