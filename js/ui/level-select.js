@@ -71,7 +71,7 @@ export class LevelSelectUI {
 
       if (isUnlocked) {
         card.innerHTML = `
-          <span class="level-num">${lvl.id}</span>
+          <span class="level-num">${String(lvl.id).padStart(2, '0')}</span>
           <div class="level-stars">
             ${stats.stars >= 1 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}
             ${stats.stars >= 2 ? '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' : ''}

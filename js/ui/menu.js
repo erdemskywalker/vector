@@ -40,11 +40,11 @@ export class MenuUI {
     this.statCompleted.textContent = `${completed} / 60`;
 
     if (current > 1 && current <= 60) {
-      this.txtContinue.textContent = `CONTINUE (LVL ${current})`;
+      this.txtContinue.textContent = `CONTINUE // LEVEL ${String(current).padStart(2, '0')}`;
     } else if (current > 60) {
-      this.txtContinue.textContent = 'PLAY AGAIN';
+      this.txtContinue.textContent = 'RETRANSCEND ALL';
     } else {
-      this.txtContinue.textContent = 'PLAY';
+      this.txtContinue.textContent = 'INITIATE // LEVEL 01';
     }
   }
 }

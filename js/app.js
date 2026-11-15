@@ -1,5 +1,6 @@
 import { GameEngine } from './engine/engine.js';
 import { CanvasRenderer } from './rendering/renderer.js';
+import { AmbientArtCanvas } from './rendering/ambient-art.js';
 import { InputManager } from './input/input.js';
 import { ProgressManager } from './systems/progress.js';
 import { AudioManager } from './systems/audio.js';
@@ -17,6 +18,8 @@ class VectorApp {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
     this.viewport = document.getElementById('game-viewport');
+    this.ambientCanvas = document.getElementById('ambient-canvas');
+    this.ambientArt = new AmbientArtCanvas(this.ambientCanvas);
 
     // Transition Overlay Elements
     this.transOverlay = document.getElementById('sector-transition-overlay');
@@ -183,6 +186,11 @@ class VectorApp {
     const loop = (timestamp) => {
       const dt = Math.min((timestamp - this.lastFrameTime) / 1000, 0.05);
       this.lastFrameTime = timestamp;
+
+      // Meditative Ambient Generative Geometric Canvas (always active across all screens)
+      if (this.ambientArt) {
+        this.ambientArt.updateAndRender(dt, timestamp / 1000);
+      }
 
       if (this.router.currentScreen === 'gameplay') {
         this.engine.update(dt);
