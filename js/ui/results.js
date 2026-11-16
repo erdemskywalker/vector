@@ -44,7 +44,9 @@ export class ResultsUI {
       this.clearCharge();
       this.app.audio.playClick();
       this.close();
-      this.app.router.navigate('levels');
+      this.app.ads.checkAndShowLevelInterstitial(() => {
+        this.app.router.navigate('levels');
+      });
     });
 
     this.btnNext.addEventListener('click', () => {

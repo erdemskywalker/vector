@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `players` (
 
 CREATE TABLE IF NOT EXISTS `levels` (
   `id` INT UNSIGNED PRIMARY KEY,
-  `world` ENUM('origin', 'keys') NOT NULL,
+  `world` ENUM('origin', 'keys', 'quantum', 'nexus') NOT NULL,
   `name` VARCHAR(100) NOT NULL,
   `width` TINYINT UNSIGNED NOT NULL,
   `height` TINYINT UNSIGNED NOT NULL,

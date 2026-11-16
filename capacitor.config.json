@@ -1,0 +1,8 @@
+{
+  "appId": "com.erdemskywalker.vector",
+  "appName": "VECTOR",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

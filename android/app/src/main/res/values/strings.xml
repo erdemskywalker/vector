@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VECTOR</string>
+    <string name="title_activity_main">VECTOR</string>
+    <string name="package_name">com.erdemskywalker.vector</string>
+    <string name="custom_url_scheme">com.erdemskywalker.vector</string>
+</resources>

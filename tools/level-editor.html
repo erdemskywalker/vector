@@ -150,6 +150,8 @@
         <select id="sel-world">
           <option value="origin">Origin</option>
           <option value="keys">Cores</option>
+          <option value="quantum">Quantum</option>
+          <option value="nexus">Nexus</option>
         </select>
       </div>
       <div class="row" style="margin-bottom: 6px;">
@@ -194,6 +196,18 @@
         <button class="palette-btn" data-tile="X">
           <span class="tile-badge" style="background: #FB7185;"></span>
           Hazard (X)
+        </button>
+        <button class="palette-btn" data-tile="T">
+          <span class="tile-badge" style="background: #C084FC; border: 1px solid #A855F7;"></span>
+          Warp (T)
+        </button>
+        <button class="palette-btn" data-tile="P">
+          <span class="tile-badge" style="background: #38BDF8; border: 1px solid #0284C7;"></span>
+          Switch (P)
+        </button>
+        <button class="palette-btn" data-tile="G">
+          <span class="tile-badge" style="background: #F43F5E; border: 1px dashed #BE123C;"></span>
+          Gate (G)
         </button>
       </div>
     </div>
@@ -310,6 +324,26 @@
             ctx.beginPath();
             ctx.arc(px + cellSize/2, py + cellSize/2, cellSize * 0.24, 0, Math.PI * 2);
             ctx.fill();
+          } else if (tile === 'T') {
+            ctx.fillStyle = 'rgba(192, 132, 252, 0.25)';
+            ctx.fillRect(px + 2, py + 2, cellSize - 4, cellSize - 4);
+            ctx.strokeStyle = '#C084FC';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(px + cellSize/2, py + cellSize/2, cellSize * 0.32, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (tile === 'P') {
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+            ctx.fillRect(px + 3, py + 3, cellSize - 6, cellSize - 6);
+            ctx.strokeStyle = '#38BDF8';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(px + 6, py + 6, cellSize - 12, cellSize - 12);
+          } else if (tile === 'G') {
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.3)';
+            ctx.fillRect(px + 2, py + 2, cellSize - 4, cellSize - 4);
+            ctx.strokeStyle = '#F43F5E';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(px + 3, py + 3, cellSize - 6, cellSize - 6);
           }
         }
       }

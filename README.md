@@ -2,39 +2,43 @@
 ## Premium Grid-Based Arcade Puzzle Game
 
 **Geliştirici:** Erdem  
-**Platform:** Mobile-First Web / Capacitor Ready (Android & iOS)  
-**Teknoloji:** HTML5, CSS3, Vanilla JavaScript, Canvas 2D API  
+**Platform:** Mobile-First Web / Native Capacitor (Android & iOS)  
+**Teknoloji:** HTML5, CSS3, Vanilla JavaScript, Canvas 2D API, Capacitor Core & AdMob  
 **Mimari Standart:** Erdem Development Rules & Preferences (Zero-Mock, Modüler Mimari, SQL-First)
 
 ---
 
 ## 🎮 Yeni Konsept & Mekanikler (VECTOR 2.0)
 
-**VECTOR 2.0**, geliştirilmiş taktiksel derinliği, dinamik enerji kısıtı, kırılgan duvarları ve mutlak kilitli enerji çekirdekleriyle yeniden tasarlandı:
+**VECTOR 2.0**, 4 dünya ve 120 doğrulanmış bölüm üzerinden geliştirilmiş taktiksel derinlik, kuantum ışınlanma, lazer kapıları ve dinamik reklam akışıyla tasarlandı:
 
 ### 1. Enerji Çekirdekleri (Portal Cores - `K`)
 - Haritadaki tüm parlayan **Enerji Çekirdekleri** toplanmadan Çıkış Portalı (`E`) kapalıdır ve içinden normal zemin gibi kayıp geçilir.
 - Son çekirdek toplandığında portal bir şok dalgasıyla aktifleşir.
-- Baypas ve sahte rota açıkları tamamen engellenmiştir.
 
 ### 2. Kırılan / Çatlak Duvarlar (Cracked Walls - `C`)
 - Küp çarptığında bir duvar gibi hareketi durdurur; ancak çarpmayla birlikte çatlar ve yok olur!
 - Bir sonraki geçişte o hücre artık açık koridora dönüşür, bu da rotayı kalıcı olarak değiştirir.
 
 ### 3. Lazer Tuzakları (Laser Hazards - `X`)
-- Rota üzerinde dokunulmaması gereken ölümcül neon tehlike hücreleridir.
-- Küp bu hücreye temas ettiğinde anında parçalanır (`CRITICAL FAILURE`).
+- Rota üzerinde dokunulmaması gereken ölümcül neon tehlike hücreleridir. Temas anında küp parçalanır.
 
-### 4. Dinamik Hamle & Enerji Sınırı (Move / Energy Limit)
+### 4. Kuantum Işınlanma Portalları (Quantum Warp Portals - `T`)
+- Küpün kayma hızını ve yönünü koruyarak bağlı portal hücresine anında taşır.
+
+### 5. Lazer Şalter & Bariyer Kapıları (Switch & Forcefield Gate - `P` & `G`)
+- Şalter hücresine (`P`) basıldığında haritadaki lazer bariyerleri (`G`) açılır veya kapanır.
+
+### 6. Dinamik Hamle & Enerji Sınırı (Move / Energy Limit)
 - **Bölüm 1 - 10:** Limitsiz serbest antrenman (öğrenme fazı).
 - **Bölüm 11 - 20:** `Par + 4` hamle sınırı.
-- **Bölüm 21 - 40:** `Par + 3` hamle sınırı.
-- **Bölüm 41 - 60:** `Par + 2` sıkı hamle sınırı.
-- Enerji bittiğinde küp parçalanır (`ENERGY DEPLETED`).
+- **Bölüm 21 - 60:** `Par + 3` hamle sınırı.
+- **Bölüm 61 - 120:** `Par + 2` sıkı hamle sınırı.
 
-### 5. Pacing & Haritaya Dönüş (Soluklanma)
-- Bölüm tamamlandığında doğrudan yeni seviyeye atlanmaz.
-- "CONTINUE" tıklandığında oyuncu **Seviye Seçim Ekranı**'na döner; yeni açılan bölüm neon parıltı ve kilit kırılma animasyonuyla açılır. Oyuncu bilinçli olarak yeni bölüme tıklar.
+### 7. Reklam & Pacing Akışı (AdMob Interstitial & World Ceremony)
+- **Bölümler Arası Geçiş Reklamı:** Bölüm geçişlerinde veya arşiv menüsüne dönüşte her 4 tamamlamada bir (`interstitialFrequency = 4`) Google AdMob Geçiş Reklamı (Interstitial) devreye girer.
+- **Dünya Açılma Töreni:** 30, 60 ve 90. bölümlerde dünya kilidi açılırken özel tesseract kilit kırma animasyonu ve AdMob reklamı tetiklenir.
+- **Hibrit Destek:** Android ve iOS üzerinde `@capacitor-community/admob` ile yerel SDK; tarayıcıda ise test modal simülasyonu çalışır.
 
 ---
 
@@ -95,13 +99,20 @@ oyun1/
 ## 🧪 Test & Çalıştırma
 
 ```bash
-# Yerel sunucuyu başlat
+# Yerel test sunucusunu başlat (Tarayıcıda test)
 cd /home/erdemskywalker/Documents/mini/oyun1
 php -S localhost:8000
 
-# 60 bölümün tamamını doğrula
-node tools/level-validator.js
+# Web varlıklarını build et ve Capacitor projelerine senkronize et
+npm run cap:sync
+
+# Android Studio veya Xcode ile projeyi aç
+npm run cap:open:android
+npm run cap:open:ios
+
+# 120 bölümün tamamını doğrula
+npm run validate
 
 # Otomatik test paketini çalıştır
-node tests/suite.js
+npm test
 ```

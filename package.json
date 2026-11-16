@@ -1,0 +1,31 @@
+{
+  "name": "vector-game",
+  "version": "2.0.0",
+  "description": "VECTOR 2.0 — Premium Grid-Based Cognitive Arcade Puzzle",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "build": "mkdir -p www && cp -r index.html css js levels www/",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android",
+    "test": "node tests/suite.js",
+    "validate": "node tools/level-validator.js"
+  },
+  "keywords": [
+    "arcade",
+    "puzzle",
+    "capacitor",
+    "admob",
+    "game"
+  ],
+  "author": "Erdem",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor-community/admob": "^8.3.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/android": "^7.0.0"
+  }
+}

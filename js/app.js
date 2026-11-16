@@ -30,6 +30,7 @@ class VectorApp {
     this.progress = new ProgressManager();
     this.audio = new AudioManager(this.progress);
     this.ads = new AdvertisementManager();
+    this.ads.init();
     this.levelManager = new LevelManager();
 
     // Engine & Rendering
