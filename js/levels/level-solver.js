@@ -37,6 +37,9 @@ export class LevelSolver {
       collectedCores: initialCollected,
       brokenCracked: initialBroken,
       gatesOpen: initialGatesOpen,
+      portalsUsed: 0,
+      switchesUsed: 0,
+      gatesPassed: 0,
       path: []
     };
 
@@ -90,12 +93,18 @@ export class LevelSolver {
         }
 
         const newPath = [...current.path, dirKey];
+        const nextPortalsUsed = (current.portalsUsed || 0) + (result.portalsUsedCount || 0);
+        const nextSwitchesUsed = (current.switchesUsed || 0) + (result.switchesUsedCount || 0);
+        const nextGatesPassed = (current.gatesPassed || 0) + (result.gatesPassedCount || 0);
 
         if (result.reachedExit) {
           return {
             solved: true,
             moves: newPath.length,
-            path: newPath
+            path: newPath,
+            portalsUsed: nextPortalsUsed,
+            switchesUsed: nextSwitchesUsed,
+            gatesPassed: nextGatesPassed
           };
         }
 
@@ -127,6 +136,9 @@ export class LevelSolver {
             collectedCores: nextCollected,
             brokenCracked: nextBroken,
             gatesOpen: nextGatesOpen,
+            portalsUsed: nextPortalsUsed,
+            switchesUsed: nextSwitchesUsed,
+            gatesPassed: nextGatesPassed,
             path: newPath
           });
         }

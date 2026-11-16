@@ -50,6 +50,9 @@ export function calculateSlide(
   let portalBecameActive = false;
   let currentGatesOpen = initialGatesOpen;
   let teleportHops = 0;
+  let portalsUsedCount = 0;
+  let switchesUsedCount = 0;
+  let gatesPassedCount = 0;
 
   // Resolve portals map if not provided
   const activePortals = portalsMap || buildPortalsMap(grid, width, height);
@@ -73,8 +76,11 @@ export function calculateSlide(
     }
 
     // 3. Laser Forcefield Gate check (Closed = Solid obstacle)
-    if (tile === TILE_TYPES.GATE && !currentGatesOpen) {
-      break;
+    if (tile === TILE_TYPES.GATE) {
+      if (!currentGatesOpen) {
+        break;
+      }
+      gatesPassedCount++;
     }
 
     // 4. Cracked wall check
@@ -126,6 +132,7 @@ export function calculateSlide(
     if (tile === TILE_TYPES.SWITCH) {
       currentGatesOpen = !currentGatesOpen;
       switchToggled = true;
+      switchesUsedCount++;
     }
 
     // 8. Exit Portal check
@@ -143,6 +150,7 @@ export function calculateSlide(
     if (tile === TILE_TYPES.TELEPORT && activePortals.has(coord) && teleportHops < 8) {
       warpDestination = activePortals.get(coord);
       teleportHops++;
+      portalsUsedCount++;
     }
 
     path.push({
@@ -189,6 +197,9 @@ export function calculateSlide(
     portalBecameActive,
     newlyCollectedCores,
     newlyBrokenCracked,
-    finalGatesOpen: currentGatesOpen
+    finalGatesOpen: currentGatesOpen,
+    portalsUsedCount,
+    switchesUsedCount,
+    gatesPassedCount
   };
 }

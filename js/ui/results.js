@@ -16,7 +16,18 @@ export class ResultsUI {
     this.btnNext = document.getElementById('btn-result-next');
     this.btnChargeFill = document.getElementById('btn-next-charge-fill');
 
+    // World Unlock Modal elements
+    this.modalWorldUnlock = document.getElementById('modal-world-unlock');
+    this.unlockWidget = document.getElementById('unlock-lock-widget');
+    this.unlockTitle = document.getElementById('world-unlock-title');
+    this.unlockSubtitle = document.getElementById('world-unlock-subtitle');
+    this.unlockDesc = document.getElementById('world-unlock-desc');
+    this.btnWorldUnlockContinue = document.getElementById('btn-world-unlock-continue');
+    this.txtWorldUnlockBtn = document.getElementById('txt-world-unlock-btn');
+
     this.chargeTimeout = null;
+    this.unlockedWorldInfo = null;
+    this.targetNextLvl = null;
 
     this.initEvents();
   }
@@ -42,10 +53,22 @@ export class ResultsUI {
       this.app.audio.playClick();
       this.advanceToNext();
     });
+
+    if (this.btnWorldUnlockContinue) {
+      this.btnWorldUnlockContinue.addEventListener('click', () => {
+        if (this.btnWorldUnlockContinue.disabled) return;
+        this.app.audio.playClick();
+        if (this.modalWorldUnlock) this.modalWorldUnlock.classList.remove('active');
+        const nextLvl = this.targetNextLvl || 1;
+        this.unlockedWorldInfo = null;
+        this.app.transitionToLevel(nextLvl);
+      });
+    }
   }
 
-  show(moves, par, stars) {
+  show(moves, par, stars, unlockedWorldInfo = null) {
     this.clearCharge();
+    this.unlockedWorldInfo = unlockedWorldInfo;
 
     this.statMoves.textContent = moves;
     this.statPar.textContent = par;
@@ -132,9 +155,65 @@ export class ResultsUI {
       return;
     }
 
+    if (this.unlockedWorldInfo) {
+      this.showWorldUnlockCeremony(this.unlockedWorldInfo, nextLvl);
+      return;
+    }
+
     this.app.ads.checkAndShowLevelInterstitial(() => {
       this.app.transitionToLevel(nextLvl);
     });
+  }
+
+  showWorldUnlockCeremony(worldInfo, nextLvl) {
+    this.targetNextLvl = nextLvl;
+    if (!this.modalWorldUnlock) {
+      this.app.transitionToLevel(nextLvl);
+      return;
+    }
+
+    if (this.unlockTitle) this.unlockTitle.textContent = `WORLD ${worldInfo.num} UNLOCKED`;
+    if (this.unlockSubtitle) this.unlockSubtitle.textContent = `SYSTEM CLASSIFICATION: ${worldInfo.name}`;
+    if (this.unlockDesc) this.unlockDesc.textContent = `SECTOR PROTOCOLS DECRYPTED // ACCESS GRANTED`;
+
+    if (this.unlockWidget) {
+      this.unlockWidget.classList.remove('unlocked');
+    }
+
+    if (this.btnWorldUnlockContinue) {
+      this.btnWorldUnlockContinue.disabled = true;
+      this.btnWorldUnlockContinue.classList.remove('ready');
+    }
+    if (this.txtWorldUnlockBtn) {
+      this.txtWorldUnlockBtn.textContent = 'DECRYPTING ACCESS...';
+    }
+
+    this.modalWorldUnlock.classList.add('active');
+
+    // 1. Play unlock animation after short delay
+    setTimeout(() => {
+      if (this.unlockWidget) {
+        this.unlockWidget.classList.add('unlocked');
+      }
+      this.app.audio.playWarp();
+    }, 450);
+
+    // 2. After unlock animation finishes (1500ms), show interstitial ad
+    setTimeout(() => {
+      this.app.ads.showInterstitial({
+        onComplete: () => {
+          // After ad closes, enable button to enter the next world
+          if (this.btnWorldUnlockContinue) {
+            this.btnWorldUnlockContinue.disabled = false;
+            this.btnWorldUnlockContinue.classList.add('ready');
+          }
+          if (this.txtWorldUnlockBtn) {
+            this.txtWorldUnlockBtn.textContent = `ENTER WORLD ${worldInfo.num} //`;
+          }
+          this.app.audio.playClick();
+        }
+      });
+    }, 1500);
   }
 
   close() {

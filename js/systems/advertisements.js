@@ -66,15 +66,43 @@ export class AdvertisementManager {
   }
 
   showInterstitial({ onComplete, onSkipped }) {
-    if (!this.isAvailable('interstitial')) {
-      // Graceful fallback when no ad provider is loaded
+    const modalAd = typeof document !== 'undefined' ? document.getElementById('modal-ad-interstitial') : null;
+    const btnClose = typeof document !== 'undefined' ? document.getElementById('btn-ad-close') : null;
+    const txtCountdown = typeof document !== 'undefined' ? document.getElementById('txt-ad-countdown') : null;
+
+    if (!modalAd || !btnClose) {
       if (onComplete) onComplete();
       return;
     }
 
-    // Future Capacitor / AdMob implementation hook
-    console.log('[AdManager] Displaying Interstitial Ad');
-    if (onComplete) onComplete();
+    // Reset button state
+    btnClose.disabled = true;
+    btnClose.classList.remove('ready');
+    if (txtCountdown) txtCountdown.textContent = 'Ad closes in 3s';
+
+    modalAd.classList.add('active');
+
+    let secondsLeft = 3;
+    const timer = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        if (txtCountdown) txtCountdown.textContent = `Ad closes in ${secondsLeft}s`;
+      } else {
+        clearInterval(timer);
+        if (txtCountdown) txtCountdown.textContent = '✕ CLOSE AD';
+        btnClose.disabled = false;
+        btnClose.classList.add('ready');
+      }
+    }, 1000);
+
+    const handleClose = () => {
+      clearInterval(timer);
+      btnClose.removeEventListener('click', handleClose);
+      modalAd.classList.remove('active');
+      if (onComplete) onComplete();
+    };
+
+    btnClose.addEventListener('click', handleClose);
   }
 
   showRewarded({ onRewarded, onClose, onError }) {

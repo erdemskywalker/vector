@@ -54,8 +54,26 @@ export class ProgressManager {
       bestMoves: bestMoves
     };
 
-    // Unlock next level (up to 60)
-    const nextLevel = Math.min(60, levelId + 1);
+    // Check if next world was locked before updating
+    const wasWorldLocked = (
+      (levelId === 30 && (this.data.highestUnlocked || 1) <= 30) ||
+      (levelId === 60 && (this.data.highestUnlocked || 1) <= 60) ||
+      (levelId === 90 && (this.data.highestUnlocked || 1) <= 90)
+    );
+
+    let unlockedWorldInfo = null;
+    if (wasWorldLocked) {
+      if (levelId === 30) {
+        unlockedWorldInfo = { id: 2, num: '02', name: 'RESONANCE CORES', code: 'keys', startLvl: 31 };
+      } else if (levelId === 60) {
+        unlockedWorldInfo = { id: 3, num: '03', name: 'QUANTUM WARP', code: 'quantum', startLvl: 61 };
+      } else if (levelId === 90) {
+        unlockedWorldInfo = { id: 4, num: '04', name: 'PROTOCOL NEXUS', code: 'nexus', startLvl: 91 };
+      }
+    }
+
+    // Unlock next level (up to 120)
+    const nextLevel = Math.min(120, levelId + 1);
     if (nextLevel > this.data.highestUnlocked) {
       this.data.highestUnlocked = nextLevel;
     }
@@ -66,7 +84,8 @@ export class ProgressManager {
     return {
       stars,
       isNewHighStars: stars > existing.stars,
-      bestMoves
+      bestMoves,
+      unlockedWorldInfo
     };
   }
 

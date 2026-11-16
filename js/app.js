@@ -139,7 +139,7 @@ class VectorApp {
       const result = this.progress.recordCompletion(lvlId, moves, par);
 
       setTimeout(() => {
-        this.resultsUI.show(moves, par, result.stars);
+        this.resultsUI.show(moves, par, result.stars, result.unlockedWorldInfo);
       }, 350);
     };
 
